@@ -13,7 +13,8 @@ Notable differences are:
 1. The code API is simpler.
 
 ## If you have doubts about authentication vs authorization...
-`Authentication` answers the question: _Who is the user who is executing the action?_, or more in general: _Who is the user, or what service, is executing the action?_.
+`Authentication` answers the question: _Who is the user who is executing the action?_, or more in general: _Who is the user, or what is the service, that is executing the action?_.
+
 `Authorization` answers the question: _Is the user, or service, authorized to do something?_.
 
 Usually, to implement authorization, is necessary to have the context of the entity that is executing the action. Anyway, the two things are logically separated and GuardPost is designed to enable their separate use.
