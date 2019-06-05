@@ -7,8 +7,8 @@ def readme():
 
 
 setup(name='guardpost',
-      version='1.0.0',
-      description='Implementation of dependency injection for Python 3',
+      version='0.0.2',
+      description='Basic framework to handle authentication and authorization in any kind of Python application.',
       long_description=readme(),
       long_description_content_type='text/markdown',
       classifiers=[

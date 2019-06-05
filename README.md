@@ -6,6 +6,7 @@ pip install guardpost
 ```
 
 This library is freely inspired by [authorization in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2); although its implementation is extremely different.
+
 Notable differences are:
 1. GuardPost is abstracted from the code that executes it, so it's not bound to the context of a web framework.
 1. GuardPost implements both classes for use with synchronous code (not necessarily I/O bound), and classes using `async/await` syntax (optimized for authentication and authorization rules that involve I/O bound operations such as web requests and communications with databases).

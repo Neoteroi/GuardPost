@@ -22,7 +22,7 @@ release: clean artifacts
 
 
 test:
-	pytest
+	python -m pytest
 
 
 testcov:
