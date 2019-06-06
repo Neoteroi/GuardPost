@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 from abc import ABC, abstractmethod
 from guardpost.authentication import Identity
 
@@ -6,7 +6,7 @@ from guardpost.authentication import Identity
 class AuthenticationHandler(ABC):
 
     @abstractmethod
-    def authenticate(self, context: Any) -> Identity:
+    def authenticate(self, context: Any) -> Optional[Identity]:
         """Obtains an identity from a context."""
 
 

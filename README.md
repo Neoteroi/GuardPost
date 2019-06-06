@@ -13,6 +13,9 @@ Notable differences are:
 1. GuardPost leverages Python function decorators for the authorization part, so any function can be wrapped to be executed after handling authorization.
 1. The code API is simpler.
 
+## More documentation and examples
+For more documentation and [examples](https://github.com/RobertoPrevato/GuardPost/wiki/Examples), refer to the project [Wiki](https://github.com/RobertoPrevato/GuardPost/wiki).
+
 ## Both for async/await and synchronous code
 GuardPost can be used both with async/await code and with synchronous code, according to use cases and users' preference.
 
