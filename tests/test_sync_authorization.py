@@ -6,8 +6,8 @@ from guardpost.authorization import Policy, PolicyNotFoundError
 from guardpost.synchronous.authorization import (Requirement,
                                                  UnauthorizedError,
                                                  AuthorizationContext,
-                                                 AuthorizationStrategy,
-                                                 AuthenticatedRequirement)
+                                                 AuthorizationStrategy)
+from guardpost.common import AuthenticatedRequirement
 
 
 def empty_identity_getter(_):
@@ -17,7 +17,7 @@ def empty_identity_getter(_):
 def get_strategy(policies: Sequence[Policy], identity_getter=None):
     if identity_getter is None:
         identity_getter = empty_identity_getter
-    return AuthorizationStrategy(identity_getter, *policies)
+    return AuthorizationStrategy(*policies, identity_getter=identity_getter)
 
 
 def request_identity_getter(args):

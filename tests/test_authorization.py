@@ -8,7 +8,7 @@ from guardpost.authorization import (Policy,
                                      UnauthorizedError,
                                      PolicyNotFoundError)
 from guardpost.asynchronous.authorization import AsyncRequirement as Requirement, AuthorizationStrategy
-from guardpost.synchronous.authorization import ClaimsRequirement, AuthenticatedRequirement
+from guardpost.common import ClaimsRequirement, AuthenticatedRequirement
 
 
 def empty_identity_getter(_):
@@ -18,7 +18,7 @@ def empty_identity_getter(_):
 def get_strategy(policies: Sequence[Policy], identity_getter=None):
     if identity_getter is None:
         identity_getter = empty_identity_getter
-    return AuthorizationStrategy(identity_getter, *policies)
+    return AuthorizationStrategy(*policies, identity_getter=identity_getter)
 
 
 @pytest.mark.asyncio

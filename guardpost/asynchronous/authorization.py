@@ -26,12 +26,12 @@ class AuthorizationStrategy:
                  'default_policy')
 
     def __init__(self,
-                 identity_getter: Callable[[Dict], Identity],
-                 *policies: Policy
-                 ):
+                 *policies: Policy,
+                 default_policy: Optional[Policy] = None,
+                 identity_getter: Optional[Callable[[Dict], Identity]] = None):
         self.policies = policies
+        self.default_policy = default_policy
         self.identity_getter = identity_getter
-        self.default_policy = None  # type: Optional[Policy]
 
     def get_policy(self, name: str) -> Optional[Policy]:
         for policy in self.policies:
@@ -39,7 +39,7 @@ class AuthorizationStrategy:
                 return policy
         return None
 
-    async def handle(self, policy_name: Optional[str], arguments: Dict):
+    async def _handle_with_identity_getter(self, policy_name: Optional[str], arguments: Dict):
         await self.authorize(policy_name, self.identity_getter(arguments))
 
     @staticmethod
@@ -80,7 +80,7 @@ class AuthorizationStrategy:
 
             @wraps(fn)
             async def wrapper(*args, **kwargs):
-                await self.handle(policy, args_getter(args, kwargs))
+                await self._handle_with_identity_getter(policy, args_getter(args, kwargs))
                 return await fn(*args, **kwargs)
 
             return wrapper
