@@ -1,13 +1,14 @@
 import pytest
 from pytest import raises
 from typing import Sequence
+from tests.examples import NoopRequirement
 from guardpost.authentication import User
 from guardpost.authorization import (Policy,
-                                         AuthorizationContext,
-                                         UnauthorizedError,
-                                         PolicyNotFoundError)
+                                     AuthorizationContext,
+                                     UnauthorizedError,
+                                     PolicyNotFoundError)
 from guardpost.asynchronous.authorization import AsyncRequirement as Requirement, AuthorizationStrategy
-from guardpost.synchronous.authorization import ClaimsRequirement
+from guardpost.synchronous.authorization import ClaimsRequirement, AuthenticatedRequirement
 
 
 def empty_identity_getter(_):
@@ -211,8 +212,17 @@ def test_policy_repr():
     assert repr(policy).startswith('<Policy "Cats lover"')
 
 
-@pytest.mark.asyncio
-async def test_claims_requirement_fails_for_missing_identity():
+def test_authenticated_requirement_succeeds_with_identity():
+    requirement = AuthenticatedRequirement()
+
+    context = AuthorizationContext(User({}, 'oidc'), [requirement])
+
+    requirement.handle(context)
+
+    assert context.succeeded
+
+
+def test_claims_requirement_fails_for_missing_identity():
     requirement = ClaimsRequirement('name')
 
     context = AuthorizationContext(None, [requirement])
@@ -283,6 +293,33 @@ async def test_auth_without_policy_no_identity():
 
     with raises(UnauthorizedError, match='Missing identity'):
         await some_method()
+
+
+@pytest.mark.asyncio
+async def test_auth_using_default_policy_failing():
+    auth: AuthorizationStrategy = get_strategy([])
+
+    auth.default_policy = Policy('authenticated', AuthenticatedRequirement())
+
+    @auth()
+    async def some_method():
+        return True
+
+    with raises(UnauthorizedError):
+        await some_method()
+
+
+@pytest.mark.asyncio
+async def test_auth_using_default_policy_succeeding():
+    auth: AuthorizationStrategy = get_strategy([])
+
+    auth.default_policy = Policy('noop', NoopRequirement())
+
+    @auth()
+    async def some_method():
+        return True
+
+    assert await some_method()
 
 
 @pytest.mark.asyncio

@@ -12,6 +12,7 @@ from guardpost.synchronous.authorization import Requirement as SyncRequirement
 
 
 class AsyncRequirement(BaseRequirement):
+    """Base class for asynchronous authorization requirements."""
 
     @abstractmethod
     async def handle(self, context: AuthorizationContext):
@@ -21,7 +22,8 @@ class AsyncRequirement(BaseRequirement):
 class AuthorizationStrategy:
 
     __slots__ = ('policies',
-                 'identity_getter')
+                 'identity_getter',
+                 'default_policy')
 
     def __init__(self,
                  identity_getter: Callable[[Dict], Identity],
@@ -29,6 +31,7 @@ class AuthorizationStrategy:
                  ):
         self.policies = policies
         self.identity_getter = identity_getter
+        self.default_policy = None  # type: Optional[Policy]
 
     def get_policy(self, name: str) -> Optional[Policy]:
         for policy in self.policies:
@@ -37,26 +40,35 @@ class AuthorizationStrategy:
         return None
 
     async def handle(self, policy_name: Optional[str], arguments: Dict):
-        identity = self.identity_getter(arguments)
+        await self.authorize(policy_name, self.identity_getter(arguments))
 
+    @staticmethod
+    async def _handle_with_policy(policy: Policy, identity: Identity):
+        with AuthorizationContext(identity, policy.requirements) as context:
+
+            for requirement in policy.requirements:
+                if isinstance(requirement, SyncRequirement):
+                    requirement.handle(context)
+                else:
+                    await requirement.handle(context)
+
+            if not context.succeeded:
+                raise UnauthorizedError(context.forced_failure,
+                                        context.pending_requirements)
+
+    async def authorize(self, policy_name: Optional[str], identity: Identity):
         if policy_name:
             policy = self.get_policy(policy_name)
 
             if not policy:
                 raise PolicyNotFoundError(policy_name)
 
-            with AuthorizationContext(identity, policy.requirements) as context:
-
-                for requirement in policy.requirements:
-                    if isinstance(requirement, SyncRequirement):
-                        requirement.handle(context)
-                    else:
-                        await requirement.handle(context)
-
-                if not context.succeeded:
-                    raise UnauthorizedError(context.forced_failure,
-                                            context.pending_requirements)
+            await self._handle_with_policy(policy, identity)
         else:
+            if self.default_policy:
+                await self._handle_with_policy(self.default_policy, identity)
+                return
+
             if not identity:
                 raise UnauthorizedError('Missing identity', [])
             if not identity.is_authenticated():

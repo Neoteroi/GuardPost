@@ -1,12 +1,13 @@
 from pytest import raises
 from typing import Sequence
-from tests.examples import Request
+from tests.examples import Request, NoopRequirement
 from guardpost.authentication import User
 from guardpost.authorization import Policy, PolicyNotFoundError
 from guardpost.synchronous.authorization import (Requirement,
-                                                     UnauthorizedError,
-                                                     AuthorizationContext,
-                                                     AuthorizationStrategy)
+                                                 UnauthorizedError,
+                                                 AuthorizationContext,
+                                                 AuthorizationStrategy,
+                                                 AuthenticatedRequirement)
 
 
 def empty_identity_getter(_):
@@ -93,6 +94,31 @@ def test_auth_without_policy_no_identity():
 
     with raises(UnauthorizedError, match='Missing identity'):
         some_method()
+
+
+def test_auth_using_default_policy_failing():
+    auth: AuthorizationStrategy = get_strategy([])
+
+    auth.default_policy = Policy('authenticated', AuthenticatedRequirement())
+
+    @auth()
+    def some_method():
+        return True
+
+    with raises(UnauthorizedError):
+        some_method()
+
+
+def test_auth_using_default_policy_succeeding():
+    auth: AuthorizationStrategy = get_strategy([])
+
+    auth.default_policy = Policy('noop', NoopRequirement())
+
+    @auth()
+    def some_method():
+        return True
+
+    assert some_method()
 
 
 def test_auth_without_policy_anonymous_identity():
