@@ -7,12 +7,12 @@ def readme():
 
 
 setup(name='guardpost',
-      version='0.0.3',
+      version='0.0.4',
       description='Basic framework to handle authentication and authorization in any kind of Python application.',
       long_description=readme(),
       long_description_content_type='text/markdown',
       classifiers=[
-          'Development Status :: 5 - Production/Stable',
+          'Development Status :: 3 - Alpha',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python :: 3',
           'Operating System :: OS Independent'
