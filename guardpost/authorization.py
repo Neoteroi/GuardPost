@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Sequence, Optional, List
+from typing import Sequence, Optional, List, Dict, Callable
 from guardpost.authentication import Identity
 
 
@@ -28,10 +28,25 @@ class UnauthorizedError(AuthorizationError):
 
     def __init__(self,
                  forced_failure: Optional[str],
-                 failed_requirements: Sequence[BaseRequirement]):
+                 failed_requirements: Sequence[BaseRequirement],
+                 scheme: Optional[str] = None,
+                 error: Optional[str] = None,
+                 error_description: Optional[str] = None):
+        """
+        Creates a new instance of UnauthorizedError, with details.
+
+        :param forced_failure: if applicable, the reason for a forced failure (regardless of requirements).
+        :param failed_requirements: a sequence of requirements that failed.
+        :param scheme: optional authentication scheme that should be used.
+        :param error: optional error short text.
+        :param error_description: optional error details.
+        """
         super().__init__(self._get_message(forced_failure, failed_requirements))
         self.failed = forced_failure
         self.failed_requirements = failed_requirements
+        self.scheme = scheme
+        self.error = error
+        self.error_description = error_description
 
     @staticmethod
     def _get_message(forced_failure, failed_requirements):
@@ -64,7 +79,7 @@ class AuthorizationContext:
         return [item for item in self.requirements if item not in self._succeeded]
 
     @property
-    def succeeded(self) -> bool:
+    def has_succeeded(self) -> bool:
         if self._failed_forced:
             return False
         return all(requirement in self._succeeded for requirement in self.requirements)
@@ -85,6 +100,7 @@ class AuthorizationContext:
         self.clear()
 
     def succeed(self, requirement: BaseRequirement):
+        """Marks the given requirement as succeeded for this authorization context."""
         self._succeeded.add(requirement)
 
     def clear(self):
@@ -101,5 +117,44 @@ class Policy:
         self.name = name
         self.requirements = requirements or []
 
+    def add(self, requirement: BaseRequirement) -> 'Policy':
+        self.requirements.append(requirement)
+        return self
+
+    def __iadd__(self, other: BaseRequirement):
+        if not isinstance(other, BaseRequirement):
+            raise ValueError('Only requirements can be added using __iadd__ syntax')
+        self.requirements.append(other)
+        return self
+
     def __repr__(self):
         return f'<Policy "{self.name}" at {id(self)}>'
+
+
+class BaseAuthorizationStrategy(ABC):
+
+    def __init__(self,
+                 *policies: Policy,
+                 default_policy: Optional[Policy] = None,
+                 identity_getter: Optional[Callable[[Dict], Identity]] = None):
+        self.policies = list(policies)
+        self.default_policy = default_policy
+        self.identity_getter = identity_getter
+
+    def get_policy(self, name: str) -> Optional[Policy]:
+        for policy in self.policies:
+            if policy.name == name:
+                return policy
+        return None
+
+    def add(self, policy: Policy) -> 'BaseAuthorizationStrategy':
+        self.policies.append(policy)
+        return self
+
+    def __iadd__(self, policy: Policy) -> 'BaseAuthorizationStrategy':
+        self.policies.append(policy)
+        return self
+
+    def with_default_policy(self, policy: Policy) -> 'BaseAuthorizationStrategy':
+        self.default_policy = policy
+        return self

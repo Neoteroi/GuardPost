@@ -219,7 +219,7 @@ def test_authenticated_requirement_succeeds_with_identity():
 
     requirement.handle(context)
 
-    assert context.succeeded
+    assert context.has_succeeded
 
 
 def test_claims_requirement_fails_for_missing_identity():
@@ -240,13 +240,13 @@ async def test_claims_requirement_mapping():
 
     requirement.handle(context)
 
-    assert context.succeeded
+    assert context.has_succeeded
 
     context = AuthorizationContext(User({'name': 'Sally'}), [requirement])
 
     await requirement.handle(context)
 
-    assert context.succeeded is False
+    assert context.has_succeeded is False
 
 
 @pytest.mark.asyncio
@@ -257,13 +257,13 @@ async def test_claims_requirement_mapping():
 
     requirement.handle(context)
 
-    assert context.succeeded
+    assert context.has_succeeded
 
     context = AuthorizationContext(User({'name': 'Charlie', 'foo': 'nope'}), [requirement])
 
     requirement.handle(context)
 
-    assert context.succeeded is False
+    assert context.has_succeeded is False
 
 
 @pytest.mark.asyncio
@@ -274,13 +274,13 @@ async def test_claims_requirement_sequence():
 
     requirement.handle(context)
 
-    assert context.succeeded
+    assert context.has_succeeded
 
     context = AuthorizationContext(User({'name': 'Charlie', 'ufo': 'nope'}), [requirement])
 
     requirement.handle(context)
 
-    assert context.succeeded is False
+    assert context.has_succeeded is False
 
 
 @pytest.mark.asyncio

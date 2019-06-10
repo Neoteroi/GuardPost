@@ -1,4 +1,5 @@
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, Sequence
+from abc import ABC, abstractmethod
 
 
 ClaimValueType = Union[bool, str, Dict]
@@ -37,3 +38,46 @@ class User(Identity):
     def email(self):
         return self['email']
 
+
+class BaseAuthenticationHandler(ABC):
+    """Base class for authentication handlers"""
+
+    @property
+    def scheme(self) -> str:
+        """Returns the name of the Authentication Scheme used by this handler."""
+        return self.__class__.__name__
+
+
+class AuthenticationSchemesNotFound(ValueError):
+
+    def __init__(self, configured_schemes: Sequence[str], required_schemes: Sequence[str]):
+        super().__init__(f'Could not find authentication handlers for required schemes: {", ".join(required_schemes)}. '
+                         f'Configured schemes are: {", ".join(configured_schemes)}')
+
+
+class BaseAuthenticationStrategy(ABC):
+
+    def __init__(self, *handlers: BaseAuthenticationHandler):
+        self.handlers = list(handlers)
+
+    def add(self, handler: BaseAuthenticationHandler) -> 'BaseAuthenticationStrategy':
+        self.handlers.append(handler)
+        return self
+
+    def __iadd__(self, handler: BaseAuthenticationHandler) -> 'BaseAuthenticationStrategy':
+        self.handlers.append(handler)
+        return self
+
+    def get_handlers(self, authentication_schemes: Optional[Sequence[str]] = None):
+        if not authentication_schemes:
+            return self.handlers
+
+        handlers = [handler for handler in self.handlers if handler.scheme in authentication_schemes]
+
+        if not handlers:
+            raise AuthenticationSchemesNotFound(
+                [handler.scheme for handler in self.handlers],
+                authentication_schemes
+            )
+
+        return handlers

@@ -1,27 +1,23 @@
-from typing import Any, Optional
-from abc import ABC, abstractmethod
-from guardpost.authentication import Identity
+from abc import abstractmethod
+from typing import Any, Optional, Sequence
+from guardpost.authentication import Identity, BaseAuthenticationHandler, BaseAuthenticationStrategy
 
 
-class AuthenticationHandler(ABC):
+class AuthenticationHandler(BaseAuthenticationHandler):
 
     @abstractmethod
     def authenticate(self, context: Any) -> Optional[Identity]:
         """Obtains an identity from a context."""
 
 
-class AuthenticationStrategy:
+class AuthenticationStrategy(BaseAuthenticationStrategy):
 
-    def __init__(self, *handlers: AuthenticationHandler):
-        self.handlers = handlers
-
-    def authenticate(self, context: Any):
+    def authenticate(self, context: Any, authentication_schemes: Optional[Sequence[str]] = None):
         if not context:
             raise ValueError('Missing context to evaluate authentication')
 
-        for handler in self.handlers:
+        for handler in self.get_handlers(authentication_schemes):
             identity = handler.authenticate(context)
 
             if identity:
                 break
-

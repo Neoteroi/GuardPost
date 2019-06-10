@@ -1,3 +1,5 @@
+[![Build status](https://dev.azure.com/robertoprevato/PythonVulgaris/_apis/build/status/PythonVulgaris-CI)](https://dev.azure.com/robertoprevato/PythonVulgaris/_build/latest?definitionId=-1)
+
 # GuardPost
 GuardPost provides a basic framework to handle authentication and authorization in any kind of Python application.
 

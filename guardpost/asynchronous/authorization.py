@@ -1,12 +1,13 @@
-from typing import Callable, Dict, Optional
 from functools import wraps
 from abc import abstractmethod
+from typing import Dict, Optional
 from guardpost.authentication import Identity
 from guardpost.authorization import (Policy,
                                      PolicyNotFoundError,
                                      AuthorizationContext,
                                      UnauthorizedError,
-                                     BaseRequirement)
+                                     BaseRequirement,
+                                     BaseAuthorizationStrategy)
 from guardpost.funchelper import args_to_dict_getter
 from guardpost.synchronous.authorization import Requirement as SyncRequirement
 
@@ -19,25 +20,7 @@ class AsyncRequirement(BaseRequirement):
         """Handles this requirement for a given context."""
 
 
-class AuthorizationStrategy:
-
-    __slots__ = ('policies',
-                 'identity_getter',
-                 'default_policy')
-
-    def __init__(self,
-                 *policies: Policy,
-                 default_policy: Optional[Policy] = None,
-                 identity_getter: Optional[Callable[[Dict], Identity]] = None):
-        self.policies = policies
-        self.default_policy = default_policy
-        self.identity_getter = identity_getter
-
-    def get_policy(self, name: str) -> Optional[Policy]:
-        for policy in self.policies:
-            if policy.name == name:
-                return policy
-        return None
+class AuthorizationStrategy(BaseAuthorizationStrategy):
 
     async def _handle_with_identity_getter(self, policy_name: Optional[str], arguments: Dict):
         await self.authorize(policy_name, self.identity_getter(arguments))
@@ -52,7 +35,7 @@ class AuthorizationStrategy:
                 else:
                     await requirement.handle(context)
 
-            if not context.succeeded:
+            if not context.has_succeeded:
                 raise UnauthorizedError(context.forced_failure,
                                         context.pending_requirements)
 

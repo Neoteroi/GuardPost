@@ -1,7 +1,9 @@
+from typing import Any, Optional
+
 import pytest
 from pytest import raises
 from tests.examples import Request
-from guardpost.authentication import Identity, User
+from guardpost.authentication import Identity, User, AuthenticationSchemesNotFound
 from guardpost.asynchronous.authentication import AuthenticationHandler, AuthenticationStrategy
 
 
@@ -118,3 +120,79 @@ async def test_strategy_throws_for_missing_context():
 
     with raises(ValueError):
         await strategy.authenticate(None)
+
+
+class MockHandler(AuthenticationHandler):
+
+    def __init__(self, identity):
+        self.identity = identity
+
+    async def authenticate(self, context: Any) -> Optional[Identity]:
+        context.user = self.identity
+        return context.user
+
+
+class OneScheme(MockHandler):
+
+    @property
+    def scheme(self) -> str:
+        return 'one'
+
+
+class TwoScheme(MockHandler):
+
+    @property
+    def scheme(self) -> str:
+        return 'two'
+
+
+class ThreeScheme(MockHandler):
+
+    @property
+    def scheme(self) -> str:
+        return 'three'
+
+
+def get_strategy_with_schemes():
+    return AuthenticationStrategy(
+        OneScheme(User({'id': '001', 'scope': 'A'})),
+        TwoScheme(User({'id': '001', 'scope': 'B'})),
+        ThreeScheme(User({'id': '001', 'scope': 'C'}))
+    )
+
+
+@pytest.mark.asyncio
+async def test_authentication_strategy_by_scheme():
+    strategy = get_strategy_with_schemes()
+
+    request = Request({})
+
+    await strategy.authenticate(request, ['three'])
+
+    assert isinstance(request.user, User)
+    assert request.user['scope'] == 'C'
+
+
+@pytest.mark.asyncio
+async def test_authentication_strategy_by_scheme_throws_for_missing_scheme():
+    strategy = get_strategy_with_schemes()
+
+    with raises(AuthenticationSchemesNotFound):
+        await strategy.authenticate(Request({}), ['four'])
+
+
+def test_default_authentication_scheme_name_matches_class_name():
+
+    class Basic(AuthenticationHandler):
+
+        async def authenticate(self, context: Any) -> Optional[Identity]:
+            pass
+
+    class Foo(AuthenticationHandler):
+
+        async def authenticate(self, context: Any) -> Optional[Identity]:
+            pass
+
+    assert Basic().scheme == 'Basic'
+    assert Foo().scheme == 'Foo'
+

@@ -1,9 +1,10 @@
 from functools import wraps
-from typing import Optional, Callable, Dict
+from typing import Optional, Dict
 from abc import abstractmethod
 from guardpost.authentication import Identity
 from guardpost.funchelper import args_to_dict_getter
 from guardpost.authorization import (AuthorizationContext,
+                                     BaseAuthorizationStrategy,
                                      Policy,
                                      BaseRequirement,
                                      PolicyNotFoundError,
@@ -18,25 +19,7 @@ class Requirement(BaseRequirement):
         """Handles this requirement for a given context"""
 
 
-class AuthorizationStrategy:
-
-    __slots__ = ('policies',
-                 'identity_getter',
-                 'default_policy')
-
-    def __init__(self,
-                 *policies: Policy,
-                 default_policy: Optional[Policy] = None,
-                 identity_getter: Optional[Callable[[Dict], Identity]] = None):
-        self.policies = policies
-        self.default_policy = default_policy
-        self.identity_getter = identity_getter
-
-    def get_policy(self, name: str) -> Optional[Policy]:
-        for policy in self.policies:
-            if policy.name == name:
-                return policy
-        return None
+class AuthorizationStrategy(BaseAuthorizationStrategy):
 
     def _handle_with_identity_getter(self, policy_name: Optional[str], arguments: Dict):
         self.authorize(policy_name, self.identity_getter(arguments))
@@ -48,7 +31,7 @@ class AuthorizationStrategy:
             for requirement in policy.requirements:
                 requirement.handle(context)
 
-            if not context.succeeded:
+            if not context.has_succeeded:
                 raise UnauthorizedError(context.forced_failure,
                                         context.pending_requirements)
 
