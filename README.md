@@ -1,4 +1,4 @@
-[![Build status](https://dev.azure.com/robertoprevato/PythonVulgaris/_apis/build/status/GuardPost-CI)](https://dev.azure.com/robertoprevato/PythonVulgaris/_build/latest?definitionId=14) [![pypi](https://robertoprevato.vsrm.visualstudio.com/_apis/public/Release/badge/651caa71-1e34-4725-afac-f2b5cf6987f9/1/2)](https://pypi.org/project/GuardPost/) [![Test coverage](https://img.shields.io/azure-devops/coverage/robertoprevato/PythonVulgaris/14.svg)](https://robertoprevato.visualstudio.com/PythonVulgaris/_build?definitionId=14)
+[![Build status](https://dev.azure.com/robertoprevato/GuardPost/_apis/build/status/GuardPost-CI)](https://dev.azure.com/robertoprevato/GuardPost/_build/latest?definitionId=15) [![pypi](https://vsrm.dev.azure.com/robertoprevato/_apis/public/Release/badge/20d71ac6-dc7c-4999-a430-62f5ac4a81f4/1/2)](https://pypi.org/project/GuardPost/) [![Test coverage](https://img.shields.io/azure-devops/coverage/robertoprevato/GuardPost/15.svg)](https://robertoprevato.visualstudio.com/GuardPost/_build?definitionId=15)
 
 # GuardPost
 GuardPost provides a basic framework to handle authentication and authorization in any kind of Python application.
