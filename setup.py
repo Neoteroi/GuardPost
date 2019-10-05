@@ -7,7 +7,7 @@ def readme():
 
 
 setup(name='guardpost',
-      version='0.0.4',
+      version='0.0.5',
       description='Basic framework to handle authentication and authorization in any kind of Python application.',
       long_description=readme(),
       long_description_content_type='text/markdown',

@@ -1,5 +1,5 @@
 from typing import Dict, Union, Optional, Sequence
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 ClaimValueType = Union[bool, str, Dict]
