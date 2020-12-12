@@ -3,12 +3,14 @@ from typing import Optional, Dict
 from abc import abstractmethod
 from guardpost.authentication import Identity
 from guardpost.funchelper import args_to_dict_getter
-from guardpost.authorization import (AuthorizationContext,
-                                     BaseAuthorizationStrategy,
-                                     Policy,
-                                     BaseRequirement,
-                                     PolicyNotFoundError,
-                                     UnauthorizedError)
+from guardpost.authorization import (
+    AuthorizationContext,
+    BaseAuthorizationStrategy,
+    Policy,
+    BaseRequirement,
+    PolicyNotFoundError,
+    UnauthorizedError,
+)
 
 
 class Requirement(BaseRequirement):
@@ -20,7 +22,6 @@ class Requirement(BaseRequirement):
 
 
 class AuthorizationStrategy(BaseAuthorizationStrategy):
-
     def _handle_with_identity_getter(self, policy_name: Optional[str], arguments: Dict):
         self.authorize(policy_name, self.identity_getter(arguments))
 
@@ -32,8 +33,9 @@ class AuthorizationStrategy(BaseAuthorizationStrategy):
                 requirement.handle(context)
 
             if not context.has_succeeded:
-                raise UnauthorizedError(context.forced_failure,
-                                        context.pending_requirements)
+                raise UnauthorizedError(
+                    context.forced_failure, context.pending_requirements
+                )
 
     def authorize(self, policy_name: Optional[str], identity: Identity):
         if policy_name:
@@ -49,9 +51,9 @@ class AuthorizationStrategy(BaseAuthorizationStrategy):
                 return
 
             if not identity:
-                raise UnauthorizedError('Missing identity', [])
+                raise UnauthorizedError("Missing identity", [])
             if not identity.is_authenticated():
-                raise UnauthorizedError('The resource requires authentication', [])
+                raise UnauthorizedError("The resource requires authentication", [])
 
     def __call__(self, policy: Optional[str] = None):
         def decorator(fn):
@@ -63,4 +65,5 @@ class AuthorizationStrategy(BaseAuthorizationStrategy):
                 return fn(*args, **kwargs)
 
             return wrapper
+
         return decorator
