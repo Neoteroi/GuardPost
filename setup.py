@@ -9,7 +9,8 @@ def readme():
 setup(
     name="guardpost",
     version="0.0.6",
-    description="Basic framework to handle authentication and authorization in any kind of Python application.",
+    description="Basic framework to handle authentication and authorization "
+    + "in any kind of Python application.",
     long_description=readme(),
     long_description_content_type="text/markdown",
     classifiers=[
@@ -25,7 +26,8 @@ setup(
     url="https://github.com/Neoteroi/GuardPost",
     author="Roberto Prevato",
     author_email="roberto.prevato@gmail.com",
-    keywords="authentication authorization identity claims strategy framework asyncio synchronous",
+    keywords="authentication authorization identity claims strategy "
+    + "framework asyncio synchronous",
     license="MIT",
     packages=["guardpost", "guardpost.synchronous", "guardpost.asynchronous"],
     install_requires=[],

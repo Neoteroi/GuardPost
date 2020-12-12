@@ -1,4 +1,7 @@
-[![Build status](https://dev.azure.com/robertoprevato/GuardPost/_apis/build/status/GuardPost-CI)](https://dev.azure.com/robertoprevato/GuardPost/_build/latest?definitionId=15) [![pypi](https://img.shields.io/pypi/v/GuardPost.svg?color=blue)](https://pypi.org/project/GuardPost/) [![Test coverage](https://img.shields.io/azure-devops/coverage/robertoprevato/GuardPost/15.svg)](https://robertoprevato.visualstudio.com/GuardPost/_build?definitionId=15)
+[![Build](https://github.com/Neoteroi/guardpost/workflows/Build/badge.svg)](https://github.com/Neoteroi/guardpost/actions?query=workflow%3ABuild)
+[![versions](https://img.shields.io/pypi/pyversions/guardpost.svg)](https://github.com/Neoteroi/guardpost)
+[![license](https://img.shields.io/github/license/Neoteroi/guardpost.svg)](https://github.com/Neoteroi/guardpost/blob/master/LICENSE)
+[![codecov](https://codecov.io/gh/Neoteroi/guardpost/branch/master/graph/badge.svg?token=sBKZG2D1bZ)](https://codecov.io/gh/Neoteroi/guardpost)
 
 # GuardPost
 GuardPost provides a basic framework to handle authentication and authorization
