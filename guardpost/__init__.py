@@ -1,4 +1,4 @@
-from .authentication import User, Identity, ClaimValueType
+from .authentication import User, Identity
 from .authorization import (
     Policy,
     PolicyNotFoundError,
