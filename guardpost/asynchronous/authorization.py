@@ -2,12 +2,14 @@ from functools import wraps
 from abc import abstractmethod
 from typing import Dict, Optional
 from guardpost.authentication import Identity
-from guardpost.authorization import (Policy,
-                                     PolicyNotFoundError,
-                                     AuthorizationContext,
-                                     UnauthorizedError,
-                                     BaseRequirement,
-                                     BaseAuthorizationStrategy)
+from guardpost.authorization import (
+    Policy,
+    PolicyNotFoundError,
+    AuthorizationContext,
+    UnauthorizedError,
+    BaseRequirement,
+    BaseAuthorizationStrategy,
+)
 from guardpost.funchelper import args_to_dict_getter
 from guardpost.synchronous.authorization import Requirement as SyncRequirement
 
@@ -21,8 +23,9 @@ class AsyncRequirement(BaseRequirement):
 
 
 class AuthorizationStrategy(BaseAuthorizationStrategy):
-
-    async def _handle_with_identity_getter(self, policy_name: Optional[str], arguments: Dict):
+    async def _handle_with_identity_getter(
+        self, policy_name: Optional[str], arguments: Dict
+    ):
         await self.authorize(policy_name, self.identity_getter(arguments))
 
     @staticmethod
@@ -36,8 +39,9 @@ class AuthorizationStrategy(BaseAuthorizationStrategy):
                     await requirement.handle(context)
 
             if not context.has_succeeded:
-                raise UnauthorizedError(context.forced_failure,
-                                        context.pending_requirements)
+                raise UnauthorizedError(
+                    context.forced_failure, context.pending_requirements
+                )
 
     async def authorize(self, policy_name: Optional[str], identity: Identity):
         if policy_name:
@@ -53,9 +57,9 @@ class AuthorizationStrategy(BaseAuthorizationStrategy):
                 return
 
             if not identity:
-                raise UnauthorizedError('Missing identity', [])
+                raise UnauthorizedError("Missing identity", [])
             if not identity.is_authenticated():
-                raise UnauthorizedError('The resource requires authentication', [])
+                raise UnauthorizedError("The resource requires authentication", [])
 
     def __call__(self, policy: Optional[str] = None):
         def decorator(fn):
@@ -63,8 +67,11 @@ class AuthorizationStrategy(BaseAuthorizationStrategy):
 
             @wraps(fn)
             async def wrapper(*args, **kwargs):
-                await self._handle_with_identity_getter(policy, args_getter(args, kwargs))
+                await self._handle_with_identity_getter(
+                    policy, args_getter(args, kwargs)
+                )
                 return await fn(*args, **kwargs)
 
             return wrapper
+
         return decorator
