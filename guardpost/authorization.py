@@ -12,9 +12,8 @@ class AuthorizationConfigurationError(Exception):
 
 
 class PolicyNotFoundError(AuthorizationConfigurationError, RuntimeError):
-
     def __init__(self, name: str):
-        super().__init__(f'Cannot find policy with name {name}')
+        super().__init__(f"Cannot find policy with name {name}")
 
 
 class BaseRequirement(ABC):
@@ -25,17 +24,18 @@ class BaseRequirement(ABC):
 
 
 class UnauthorizedError(AuthorizationError):
-
-    def __init__(self,
-                 forced_failure: Optional[str],
-                 failed_requirements: Sequence[BaseRequirement],
-                 scheme: Optional[str] = None,
-                 error: Optional[str] = None,
-                 error_description: Optional[str] = None):
+    def __init__(
+        self,
+        forced_failure: Optional[str],
+        failed_requirements: Sequence[BaseRequirement],
+        scheme: Optional[str] = None,
+        error: Optional[str] = None,
+        error_description: Optional[str] = None,
+    ):
         """
         Creates a new instance of UnauthorizedError, with details.
 
-        :param forced_failure: if applicable, the reason for a forced failure (regardless of requirements).
+        :param forced_failure: if applicable, the reason for a forced failure.
         :param failed_requirements: a sequence of requirements that failed.
         :param scheme: optional authentication scheme that should be used.
         :param error: optional error short text.
@@ -51,24 +51,25 @@ class UnauthorizedError(AuthorizationError):
     @staticmethod
     def _get_message(forced_failure, failed_requirements):
         if forced_failure:
-            return f'The user is not authorized to perform the selected action. {forced_failure}.'
+            return (
+                "The user is not authorized to perform the selected action."
+                + f" {forced_failure}."
+            )
 
         if failed_requirements:
-            return f'The user is not authorized to perform the selected action. ' \
-                f'Failed requirements: {", ".join(str(requirement) for requirement in failed_requirements)}.'
-        return 'Unauthorized'
+            errors = ", ".join(str(requirement) for requirement in failed_requirements)
+            return (
+                f"The user is not authorized to perform the selected action. "
+                f"Failed requirements: {errors}."
+            )
+        return "Unauthorized"
 
 
 class AuthorizationContext:
 
-    __slots__ = ('identity',
-                 'requirements',
-                 '_succeeded',
-                 '_failed_forced')
+    __slots__ = ("identity", "requirements", "_succeeded", "_failed_forced")
 
-    def __init__(self,
-                 identity: Identity,
-                 requirements: Sequence[BaseRequirement]):
+    def __init__(self, identity: Identity, requirements: Sequence[BaseRequirement]):
         self.identity = identity
         self.requirements = requirements
         self._succeeded = set()
@@ -91,7 +92,7 @@ class AuthorizationContext:
     def fail(self, reason: str):
         """Called to indicate that this authorization context has failed.
         Forces failure, regardless of succeeded requirements."""
-        self._failed_forced = reason or 'Authorization failed.'
+        self._failed_forced = reason or "Authorization failed."
 
     def __enter__(self):
         return self
@@ -110,20 +111,19 @@ class AuthorizationContext:
 
 class Policy:
 
-    __slots__ = ('name',
-                 'requirements')
+    __slots__ = ("name", "requirements")
 
     def __init__(self, name: str, *requirements: BaseRequirement):
         self.name = name
         self.requirements = requirements or []
 
-    def add(self, requirement: BaseRequirement) -> 'Policy':
+    def add(self, requirement: BaseRequirement) -> "Policy":
         self.requirements.append(requirement)
         return self
 
     def __iadd__(self, other: BaseRequirement):
         if not isinstance(other, BaseRequirement):
-            raise ValueError('Only requirements can be added using __iadd__ syntax')
+            raise ValueError("Only requirements can be added using __iadd__ syntax")
         self.requirements.append(other)
         return self
 
@@ -132,11 +132,12 @@ class Policy:
 
 
 class BaseAuthorizationStrategy(ABC):
-
-    def __init__(self,
-                 *policies: Policy,
-                 default_policy: Optional[Policy] = None,
-                 identity_getter: Optional[Callable[[Dict], Identity]] = None):
+    def __init__(
+        self,
+        *policies: Policy,
+        default_policy: Optional[Policy] = None,
+        identity_getter: Optional[Callable[[Dict], Identity]] = None,
+    ):
         self.policies = list(policies)
         self.default_policy = default_policy
         self.identity_getter = identity_getter
@@ -147,14 +148,14 @@ class BaseAuthorizationStrategy(ABC):
                 return policy
         return None
 
-    def add(self, policy: Policy) -> 'BaseAuthorizationStrategy':
+    def add(self, policy: Policy) -> "BaseAuthorizationStrategy":
         self.policies.append(policy)
         return self
 
-    def __iadd__(self, policy: Policy) -> 'BaseAuthorizationStrategy':
+    def __iadd__(self, policy: Policy) -> "BaseAuthorizationStrategy":
         self.policies.append(policy)
         return self
 
-    def with_default_policy(self, policy: Policy) -> 'BaseAuthorizationStrategy':
+    def with_default_policy(self, policy: Policy) -> "BaseAuthorizationStrategy":
         self.default_policy = policy
         return self

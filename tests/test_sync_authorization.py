@@ -3,10 +3,12 @@ from typing import Sequence
 from tests.examples import Request, NoopRequirement
 from guardpost.authentication import User
 from guardpost.authorization import Policy, PolicyNotFoundError
-from guardpost.synchronous.authorization import (Requirement,
-                                                 UnauthorizedError,
-                                                 AuthorizationContext,
-                                                 AuthorizationStrategy)
+from guardpost.synchronous.authorization import (
+    Requirement,
+    UnauthorizedError,
+    AuthorizationContext,
+    AuthorizationStrategy,
+)
 from guardpost.common import AuthenticatedRequirement
 
 
@@ -21,67 +23,65 @@ def get_strategy(policies: Sequence[Policy], identity_getter=None):
 
 
 def request_identity_getter(args):
-    return args.get('request').user
+    return args.get("request").user
 
 
 def test_authorization_identity_getter():
-
     class UserNameRequirement(Requirement):
-
         def __init__(self, expected_name: str):
             self.expected_name = expected_name
 
         def handle(self, context: AuthorizationContext):
             assert context.identity is not None
 
-            if context.identity.has_claim_value('name', self.expected_name):
+            if context.identity.has_claim_value("name", self.expected_name):
                 context.succeed(self)
 
-    auth = get_strategy([Policy('user', UserNameRequirement('Tybek'))], request_identity_getter)
+    auth = get_strategy(
+        [Policy("user", UserNameRequirement("Tybek"))], request_identity_getter
+    )
 
-    @auth(policy='user')
+    @auth(policy="user")
     def some_method(request: Request):
         assert request is not None
         return True
 
-    value = some_method(Request(None, User({
-        'name': 'Tybek'
-    })))
+    value = some_method(Request(None, User({"name": "Tybek"})))
 
     assert value is True
 
 
 def test_policy_not_found_error_sync():
-    auth = get_strategy([Policy('admin')])
+    auth = get_strategy([Policy("admin")])
 
-    @auth(policy='user')
+    @auth(policy="user")
     def some_method():
         pass
 
-    with raises(PolicyNotFoundError, match='Cannot find policy'):
+    with raises(PolicyNotFoundError, match="Cannot find policy"):
         some_method()
 
 
 def test_policy_authorization_two_requirements_both_fail():
-
     class ExampleOne(Requirement):
-
         def handle(self, context: AuthorizationContext):
             pass
 
     class ExampleTwo(Requirement):
-
         def handle(self, context: AuthorizationContext):
             pass
 
-    auth = get_strategy([Policy('user', ExampleOne(), ExampleTwo())])
+    auth = get_strategy([Policy("user", ExampleOne(), ExampleTwo())])
 
-    @auth(policy='user')
+    @auth(policy="user")
     def some_method():
         return True
 
-    with raises(UnauthorizedError, match='The user is not authorized to perform the selected action. '
-                                         'Failed requirements: ExampleOne, ExampleTwo.'):
+    with raises(
+        UnauthorizedError,
+        match="The user is not authorized to perform the selected action. "
+        "Failed requirements: ExampleOne, ExampleTwo.",
+    ):
         some_method()
 
 
@@ -92,14 +92,14 @@ def test_auth_without_policy_no_identity():
     def some_method():
         return True
 
-    with raises(UnauthorizedError, match='Missing identity'):
+    with raises(UnauthorizedError, match="Missing identity"):
         some_method()
 
 
 def test_auth_using_default_policy_failing():
     auth: AuthorizationStrategy = get_strategy([])
 
-    auth.default_policy = Policy('authenticated', AuthenticatedRequirement())
+    auth.default_policy = Policy("authenticated", AuthenticatedRequirement())
 
     @auth()
     def some_method():
@@ -112,7 +112,7 @@ def test_auth_using_default_policy_failing():
 def test_auth_using_default_policy_succeeding():
     auth: AuthorizationStrategy = get_strategy([])
 
-    auth.default_policy = Policy('noop', NoopRequirement())
+    auth.default_policy = Policy("noop", NoopRequirement())
 
     @auth()
     def some_method():
@@ -122,11 +122,11 @@ def test_auth_using_default_policy_succeeding():
 
 
 def test_auth_without_policy_anonymous_identity():
-    auth: AuthorizationStrategy = get_strategy([], lambda _: User({'oid': '001'}))
+    auth: AuthorizationStrategy = get_strategy([], lambda _: User({"oid": "001"}))
 
     @auth()
     def some_method():
         return True
 
-    with raises(UnauthorizedError, match='The resource requires authentication'):
+    with raises(UnauthorizedError, match="The resource requires authentication"):
         some_method()
