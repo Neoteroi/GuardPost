@@ -1,11 +1,11 @@
 from abc import ABC
-from typing import Any, Dict, Optional, Sequence
+from typing import Optional, Sequence
 
 
 class Identity:
     def __init__(
         self,
-        claims: Dict[Any, Any],
+        claims: dict,
         authentication_mode: Optional[str] = None,
     ):
         self.claims = claims or {}

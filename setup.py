@@ -8,13 +8,13 @@ def readme():
 
 setup(
     name="guardpost",
-    version="0.0.6",
+    version="0.0.7",
     description="Basic framework to handle authentication and authorization "
     + "in any kind of Python application.",
     long_description=readme(),
     long_description_content_type="text/markdown",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
@@ -23,7 +23,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Operating System :: OS Independent",
     ],
-    url="https://github.com/Neoteroi/GuardPost",
+    url="https://github.com/Neoteroi/guardpost",
     author="Roberto Prevato",
     author_email="roberto.prevato@gmail.com",
     keywords="authentication authorization identity claims strategy "
