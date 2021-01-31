@@ -90,8 +90,10 @@ class AuthorizationContext:
         return self._failed_forced
 
     def fail(self, reason: str):
-        """Called to indicate that this authorization context has failed.
-        Forces failure, regardless of succeeded requirements."""
+        """
+        Called to indicate that this authorization context has failed.
+        Forces failure, regardless of succeeded requirements.
+        """
         self._failed_forced = reason or "Authorization failed."
 
     def __enter__(self):
@@ -115,7 +117,7 @@ class Policy:
 
     def __init__(self, name: str, *requirements: BaseRequirement):
         self.name = name
-        self.requirements = requirements or []
+        self.requirements = list(requirements) or []
 
     def add(self, requirement: BaseRequirement) -> "Policy":
         self.requirements.append(requirement)

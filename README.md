@@ -53,3 +53,9 @@ do something?_.
 Usually, to implement authorization, is necessary to have the context of the
 entity that is executing the action. Anyway, the two things are logically
 separated and GuardPost is designed to keep them separate.
+
+## Usage in BlackSheep
+`guardpost` is used in the [BlackSheep](https://www.neoteroi.dev/blacksheep/)
+web framework to implement [authentication and authorization
+strategies](https://www.neoteroi.dev/blacksheep/authentication/) for request
+handlers.

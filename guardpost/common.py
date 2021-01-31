@@ -1,7 +1,9 @@
-from typing import Sequence, Union, Mapping as MappingType
 from collections.abc import Mapping
+from typing import Mapping as MappingType
+from typing import Sequence, Union
+
 from .authorization import Policy
-from .synchronous.authorization import Requirement, AuthorizationContext
+from .synchronous.authorization import AuthorizationContext, Requirement
 
 
 class AnonymousRequirement(Requirement):
