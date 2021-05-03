@@ -55,7 +55,7 @@ def test_identity_dictionary_notation():
 
 
 def test_user_identity_dictionary_notation():
-    a = Identity({"oid": "bc5f60df-4c27-49c1-8466-acf32618a6d2"})
+    a = User({"oid": "bc5f60df-4c27-49c1-8466-acf32618a6d2"})
 
     assert a["oid"] == "bc5f60df-4c27-49c1-8466-acf32618a6d2"
     assert a["foo"] is None
