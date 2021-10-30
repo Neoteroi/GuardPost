@@ -1,16 +1,17 @@
-from functools import wraps
-from typing import Optional, Dict
 from abc import abstractmethod
+from functools import wraps
+from typing import Dict, Optional
+
 from guardpost.authentication import Identity
-from guardpost.funchelper import args_to_dict_getter
 from guardpost.authorization import (
     AuthorizationContext,
     BaseAuthorizationStrategy,
-    Policy,
     BaseRequirement,
+    Policy,
     PolicyNotFoundError,
     UnauthorizedError,
 )
+from guardpost.funchelper import args_to_dict_getter
 
 
 class Requirement(BaseRequirement):

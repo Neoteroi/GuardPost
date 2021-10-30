@@ -1,5 +1,5 @@
-from typing import Tuple, Dict, Callable
 from inspect import Signature
+from typing import Callable, Dict, Tuple
 
 
 def args_to_dict_getter(method: Callable):

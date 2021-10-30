@@ -1,9 +1,10 @@
 from abc import abstractmethod
 from typing import Any, Optional, Sequence
+
 from guardpost.authentication import (
-    Identity,
     BaseAuthenticationHandler,
     BaseAuthenticationStrategy,
+    Identity,
 )
 
 

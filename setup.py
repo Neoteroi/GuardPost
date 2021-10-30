@@ -21,6 +21,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Operating System :: OS Independent",
     ],
     url="https://github.com/Neoteroi/guardpost",
@@ -31,6 +32,11 @@ setup(
     license="MIT",
     packages=["guardpost", "guardpost.synchronous", "guardpost.asynchronous"],
     install_requires=[],
+    extras_require={
+        "jwt": [
+            "PyJWT~=2.3.0",
+        ]
+    },
     include_package_data=True,
     zip_safe=False,
 )
