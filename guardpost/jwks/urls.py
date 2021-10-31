@@ -1,6 +1,4 @@
-import asyncio
-
-from guardpost.utils import read_json_data
+from guardpost.utils import get_running_loop, read_json_data
 
 from . import JWKS, KeysProvider
 
@@ -11,7 +9,7 @@ def read_jwks_from_url(url: str) -> JWKS:
 
 
 async def read_jwks_from_url_async(url: str) -> JWKS:
-    loop = asyncio.get_running_loop()
+    loop = get_running_loop()
     return await loop.run_in_executor(None, lambda: read_jwks_from_url(url))
 
 
