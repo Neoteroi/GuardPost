@@ -1,13 +1,15 @@
-from pytest import raises
 from typing import Any, Optional
-from guardpost.authorization import Policy, UnauthorizedError
+
+from pytest import raises
+
 from guardpost.authentication import Identity
+from guardpost.authorization import Policy, UnauthorizedError
+from guardpost.common import AnonymousPolicy, AuthenticatedRequirement
 from guardpost.synchronous.authentication import (
-    AuthenticationStrategy,
     AuthenticationHandler,
+    AuthenticationStrategy,
 )
 from guardpost.synchronous.authorization import AuthorizationStrategy
-from guardpost.common import AnonymousPolicy, AuthenticatedRequirement
 
 
 def test_policy_without_requirements_always_succeeds():

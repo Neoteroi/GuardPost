@@ -9,8 +9,10 @@ def readme():
 setup(
     name="guardpost",
     version="0.0.7",
-    description="Basic framework to handle authentication and authorization "
-    + "in any kind of Python application.",
+    description=(
+        "Basic framework to handle authentication and authorization "
+        "in any kind of Python application."
+    ),
     long_description=readme(),
     long_description_content_type="text/markdown",
     classifiers=[
@@ -35,6 +37,7 @@ setup(
     extras_require={
         "jwt": [
             "PyJWT~=2.3.0",
+            "cryptography~=35.0.0",
         ]
     },
     include_package_data=True,

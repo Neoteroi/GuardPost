@@ -1,30 +1,22 @@
 import asyncio
-import json
-import urllib.request
 
-from ..errors import FailedRequestError
+from guardpost.utils import read_json_data
+
 from . import JWKS, KeysProvider
 
 
-def _read_json_data(url: str):
-    with urllib.request.urlopen(url) as response:
-        if response.status != 200:
-            raise FailedRequestError(response)
-
-        return json.loads(response.read())
-
-
 def _read_openid_configuration(authority: str):
-    return _read_json_data(authority.rstrip("/") + "/.well-known/openid-configuration")
+    return read_json_data(authority.rstrip("/") + "/.well-known/openid-configuration")
 
 
 def read_jwks_from_authority(authority: str) -> JWKS:
     openid_config = _read_openid_configuration(authority)
 
-    if "jwks_uri" not in openid_config:
+    if "jwks_uri" not in openid_config:  # pragma: no cover
         raise ValueError("Expected a `jwks_uri` property in the OpenID Configuration")
 
-    return _read_json_data(openid_config["jwks_uri"])
+    jwks = read_json_data(openid_config["jwks_uri"])
+    return JWKS.from_dict(jwks)
 
 
 async def read_jwks_from_authority_async(authority: str) -> JWKS:
@@ -34,7 +26,7 @@ async def read_jwks_from_authority_async(authority: str) -> JWKS:
 
 class AuthorityKeysProvider(KeysProvider):
     """
-    This kind of KeysProvider uses the /.well-known/openid-configuration
+    Kind of KeysProvider that uses the /.well-known/openid-configuration
     discovery endpoint to obtain the `jwks_uri` and the JWKS.
     """
 
@@ -42,6 +34,9 @@ class AuthorityKeysProvider(KeysProvider):
         """
         Creates an instance of AuthorityKeysProvider bound to the given authority.
         """
+        super().__init__()
+        if not authority:
+            raise TypeError("Missing authority")
         self._authority = authority
 
     @property

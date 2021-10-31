@@ -2,12 +2,13 @@ from typing import Any, Optional
 
 import pytest
 from pytest import raises
-from tests.examples import Request
-from guardpost.authentication import Identity, User, AuthenticationSchemesNotFound
+
 from guardpost.asynchronous.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
 )
+from guardpost.authentication import AuthenticationSchemesNotFound, Identity, User
+from tests.examples import Request
 
 
 def test_claims():

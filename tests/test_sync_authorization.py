@@ -1,15 +1,17 @@
-from pytest import raises
 from typing import Sequence
-from tests.examples import Request, NoopRequirement
+
+from pytest import raises
+
 from guardpost.authentication import User
 from guardpost.authorization import Policy, PolicyNotFoundError
+from guardpost.common import AuthenticatedRequirement
 from guardpost.synchronous.authorization import (
-    Requirement,
-    UnauthorizedError,
     AuthorizationContext,
     AuthorizationStrategy,
+    Requirement,
+    UnauthorizedError,
 )
-from guardpost.common import AuthenticatedRequirement
+from tests.examples import NoopRequirement, Request
 
 
 def empty_identity_getter(_):

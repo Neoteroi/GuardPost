@@ -1,10 +1,11 @@
 from pytest import raises
-from tests.examples import Request
+
 from guardpost.authentication import User
 from guardpost.synchronous.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
 )
+from tests.examples import Request
 
 
 def test_authentication_strategy():

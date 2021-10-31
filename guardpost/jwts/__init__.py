@@ -1,90 +1,123 @@
-import logging
-from typing import Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 import jwt
-from jwt.exceptions import InvalidIssuerError
+from jwt.exceptions import InvalidIssuerError, InvalidTokenError
 
-from ..jwks import JWK, JWKS, rsa_pem_from_jwk
+from ..jwks import JWK, JWKS, KeysProvider
+from ..jwks.caching import CachingKeysProvider
 from ..jwks.openid import AuthorityKeysProvider
-
-
-def get_logger():
-    return logging.getLogger("auth-jwts")
+from ..jwks.urls import URLKeysProvider
+from ..utils import get_logger
 
 
 class OAuthException(Exception):
     """Base class for exception risen when there is an issue related to OAuth."""
 
 
-class InvalidAuthorizationToken(Exception):
-    def __init__(self, details):
-        super().__init__("Invalid authorization token: " + details)
+class InvalidAccessToken(Exception):
+    def __init__(self, details=""):
+        if details:
+            message = "Invalid access token: " + details
+        else:
+            message = "Invalid access token."
+        super().__init__(message)
 
 
-def get_kid(token: str):
+def get_kid(token: str) -> Optional[str]:
     """
     Extracts a kid (key id) from a JWT.
-    The kid is necessary for signature verification.
     """
     headers = jwt.get_unverified_header(token)
-    if not headers:
-        raise InvalidAuthorizationToken("missing headers")
-    try:
-        return headers["kid"]
-    except KeyError:
-        raise InvalidAuthorizationToken("missing kid")
+    if not headers:  # pragma: no cover
+        raise InvalidAccessToken("missing headers")
+    return headers.get("kid")
 
 
 class JWTValidator:
     def __init__(
         self,
         *,
-        authority: str,
         valid_issuers: Sequence[str],
         valid_audiences: Sequence[str],
+        authority: Optional[str] = None,
         algorithms: Sequence[str] = ["RS256"],
+        require_kid: bool = True,
+        keys_provider: Optional[KeysProvider] = None,
+        keys_url: Optional[str] = None,
+        cache_time: float = 10800
     ) -> None:
-        self._authority = authority
+        """
+        Creates a new instance of JWTValidator. This class only supports validating
+        access tokens signed using asymmetric keys and handling JWKs of RSA type.
+
+        Parameters
+        ----------
+        valid_issuers : Sequence[str]
+            Sequence of acceptable issuers (iss).
+        valid_audiences : Sequence[str]
+            Sequence of acceptable audiences (aud).
+        authority : Optional[str], optional
+            If provided, keys are obtained from a standard well-known endpoint.
+            This parameter is ignored if `keys_provider` is given.
+        algorithms : Sequence[str], optional
+            Sequence of acceptable algorithms, by default ["RS256"].
+        require_kid : bool, optional
+            According to the specification, a key id is optional in JWK. However,
+            this parameter lets control whether access tokens missing `kid` in their
+            headers should be handled or rejected. By default True, thus only JWTs
+            having `kid` header are accepted.
+        keys_provider : Optional[KeysProvider], optional
+            If provided, the exact `KeysProvider` to be used when fetching keys.
+            By default None
+        keys_url : Optional[str], optional
+            If provided, keys are obtained from the given URL through HTTP GET.
+            This parameter is ignored if `keys_provider` is given.
+        cache_time : float, optional
+            If >= 0, JWKS are cached in memory and stored for the given amount in
+            seconds. By default 10800 (3 hours).
+        """
+        if keys_provider:
+            pass
+        elif authority:
+            keys_provider = AuthorityKeysProvider(authority)
+        elif keys_url:
+            keys_provider = URLKeysProvider(keys_url)
+
+        if keys_provider is None:
+            raise TypeError(
+                "Missing `keys_provider`, either provide a `url` source, "
+                "`authority`, or `keys_provider`."
+            )
+
+        if cache_time:
+            keys_provider = CachingKeysProvider(keys_provider, cache_time)
+
         self._valid_issuers = list(valid_issuers)
         self._valid_audiences = list(valid_audiences)
         self._algorithms = list(algorithms)
-        self._keys_provider = AuthorityKeysProvider(authority)
-        self._jwks: Optional[JWKS] = None
+        self._keys_provider: KeysProvider = keys_provider
+        self.require_kid = require_kid
         self.logger = get_logger()
 
     async def get_jwks(self) -> JWKS:
-        if self._jwks is not None:
-            return self._jwks
-        self._jwks = await self._keys_provider.get_keys()
-        return self._jwks
+        return await self._keys_provider.get_keys()
 
-    async def get_jwk(self, kid) -> JWK:
+    async def get_jwk(self, kid: str) -> JWK:
         jwks = await self.get_jwks()
 
-        if "keys" not in jwks:
-            raise OAuthException("Expected a JWKS structure defining a `keys` property")
-
-        for jwk in jwks.get("keys", {}):
-            if jwk.get("kid") == kid:
+        for jwk in jwks.keys:
+            if jwk.kid is not None and jwk.kid == kid:
                 return jwk
-        raise InvalidAuthorizationToken("kid not recognized")
+        raise InvalidAccessToken("kid not recognized")
 
-    async def get_public_key(self, token):
-        return rsa_pem_from_jwk(await self.get_jwk(get_kid(token)))
-
-    async def validate_jwt(self, access_token: str):
-        """
-        Validates the given JWT and returns its payload. This method throws exception
-        if the JWT is not valid (i.e. its signature cannot be verified, for example
-        because the JWT expired).
-        """
-        public_key = await self.get_public_key(access_token)
-
+    def _validate_jwt_by_key(
+        self, access_token: str, jwk: JWK
+    ) -> Optional[Dict[str, Any]]:
         for issuer in self._valid_issuers:
             try:
                 return jwt.decode(
                     access_token,
-                    public_key,  # type: ignore
+                    jwk.pem,  # type: ignore
                     verify=True,
                     algorithms=self._algorithms,
                     audience=self._valid_audiences,
@@ -95,5 +128,40 @@ class JWTValidator:
                 # note that token verification might fail for several other reasons
                 # that are not catched (e.g. expired signature)
                 pass
+            except InvalidTokenError as exc:
+                self.logger.debug("Invalid access token: ", exc_info=exc)
+                return None
+        return None
 
-        raise InvalidAuthorizationToken("Invalid access token.")
+    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+        """
+        Validates the given JWT and returns its payload. This method throws exception
+        if the JWT is not valid (i.e. its signature cannot be verified, for example
+        because the JWT expired).
+        """
+        kid = get_kid(access_token)
+        if kid is None and self.require_kid:
+            # A key id is optional according to the specification,
+            # but here we expect a kid by default.
+            # Disabling require_kid makes this method less efficient.
+            raise InvalidAccessToken("Missing key id (kid).")
+
+        if kid is None:
+            # Unoptimal scenario: the identity provider does not handle key ids,
+            # thus if more than one JWK is configured in the JWKS, we need to cycle
+            # and attempt each of them
+            jwks = await self.get_jwks()
+
+            for jwk in jwks.keys:
+                data = self._validate_jwt_by_key(access_token, jwk)
+                if data is not None:
+                    return data
+        else:
+            # Preferred scenario: the identity provider handles key ids,
+            # thus we can validate an access token using an exact key
+            jwk = await self.get_jwk(kid)
+            data = self._validate_jwt_by_key(access_token, jwk)
+            if data is not None:
+                return data
+
+        raise InvalidAccessToken()
