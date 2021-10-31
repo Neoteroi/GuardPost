@@ -1,19 +1,19 @@
+from typing import Sequence
+
 import pytest
 from pytest import raises
-from typing import Sequence
-from tests.examples import NoopRequirement
+
+from guardpost.asynchronous.authorization import AsyncRequirement as Requirement
+from guardpost.asynchronous.authorization import AuthorizationStrategy
 from guardpost.authentication import User
 from guardpost.authorization import (
-    Policy,
     AuthorizationContext,
-    UnauthorizedError,
+    Policy,
     PolicyNotFoundError,
+    UnauthorizedError,
 )
-from guardpost.asynchronous.authorization import (
-    AsyncRequirement as Requirement,
-    AuthorizationStrategy,
-)
-from guardpost.common import ClaimsRequirement, AuthenticatedRequirement
+from guardpost.common import AuthenticatedRequirement, ClaimsRequirement
+from tests.examples import NoopRequirement
 
 
 def empty_identity_getter(_):

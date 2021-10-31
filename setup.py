@@ -8,9 +8,11 @@ def readme():
 
 setup(
     name="guardpost",
-    version="0.0.7",
-    description="Basic framework to handle authentication and authorization "
-    + "in any kind of Python application.",
+    version="0.0.8",
+    description=(
+        "Basic framework to handle authentication and authorization "
+        "in any kind of Python application."
+    ),
     long_description=readme(),
     long_description_content_type="text/markdown",
     classifiers=[
@@ -21,6 +23,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Operating System :: OS Independent",
     ],
     url="https://github.com/Neoteroi/guardpost",
@@ -29,8 +32,20 @@ setup(
     keywords="authentication authorization identity claims strategy "
     + "framework asyncio synchronous",
     license="MIT",
-    packages=["guardpost", "guardpost.synchronous", "guardpost.asynchronous"],
+    packages=[
+        "guardpost",
+        "guardpost.synchronous",
+        "guardpost.asynchronous",
+        "guardpost.jwks",
+        "guardpost.jwts",
+    ],
     install_requires=[],
+    extras_require={
+        "jwt": [
+            "PyJWT~=2.3.0",
+            "cryptography~=35.0.0",
+        ]
+    },
     include_package_data=True,
     zip_safe=False,
 )

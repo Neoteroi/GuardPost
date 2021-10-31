@@ -18,8 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-18.04
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
 
     steps:
       - uses: actions/checkout@v1
@@ -47,9 +48,20 @@ jobs:
         run: |
           pip install -U --no-index --find-links=deps deps/*
 
+      - name: Run linters
+        run: |
+          echo "Running linters - if build fails here, please be patient! Feel free to ask for assistance."
+
+          flake8 $PROJECT_NAME
+          flake8 tests
+          isort --check-only $PROJECT_NAME 2>&1
+          isort --check-only tests 2>&1
+          black --check $PROJECT_NAME 2>&1
+          black --check tests 2>&1
+
       - name: Run tests
         run: |
-          flake8 && pytest --doctest-modules --junitxml=junit/pytest-results-${{ matrix.python-version }}.xml --cov=$PROJECT_NAME --cov-report=xml tests/
+          pytest --doctest-modules --junitxml=junit/pytest-results-${{ matrix.python-version }}.xml --cov=$PROJECT_NAME --cov-report=xml tests/
 
       - name: Upload pytest test results
         uses: actions/upload-artifact@master

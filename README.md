@@ -12,6 +12,12 @@ in any kind of Python application.
 pip install guardpost
 ```
 
+To install with support for `JSON Web Tokens (JWTs)` validation:
+
+```
+pip install guardpost[jwt]
+```
+
 This library is freely inspired by [authorization in ASP.NET
 Core](https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2);
 although its implementation is extremely different.
