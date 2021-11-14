@@ -10,8 +10,14 @@ class Identity:
     ):
         self.claims = claims or {}
         self.authentication_mode = authentication_mode
+        self.access_token: Optional[str] = None
+        self.refresh_token: Optional[str] = None
 
-    def is_authenticated(self):
+    @property
+    def sub(self) -> Optional[str]:
+        return self["sub"]
+
+    def is_authenticated(self) -> bool:
         return bool(self.authentication_mode)
 
     def __getitem__(self, item):
@@ -26,15 +32,15 @@ class Identity:
 
 class User(Identity):
     @property
-    def id(self):
-        return self["id"]
+    def id(self) -> Optional[str]:
+        return self["id"] or self.sub
 
     @property
-    def name(self):
+    def name(self) -> Optional[str]:
         return self["name"]
 
     @property
-    def email(self):
+    def email(self) -> Optional[str]:
         return self["email"]
 
 
