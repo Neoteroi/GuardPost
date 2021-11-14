@@ -39,6 +39,7 @@ def test_policy_iadd_syntax():
 
     auth_req = AuthenticatedRequirement()
 
+    assert strategy.default_policy is not None
     strategy.default_policy += auth_req
 
     assert strategy.default_policy.requirements[0] is auth_req

@@ -15,7 +15,7 @@ def get_logger():
     return logging.getLogger("auth-jwts")
 
 
-def get_running_loop():
+def get_running_loop():  # pragma: no cover
     if sys.version_info[:2] <= (3, 7):
         # For Python 3.6
         return asyncio._get_running_loop()

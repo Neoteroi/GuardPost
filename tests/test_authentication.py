@@ -55,6 +55,12 @@ def test_identity_dictionary_notation():
     assert a["foo"] is None
 
 
+def test_identity_sub():
+    a = Identity({"sub": "bc5f60df-4c27-49c1-8466-acf32618a6d2"})
+
+    assert a.sub == "bc5f60df-4c27-49c1-8466-acf32618a6d2"
+
+
 def test_user_identity_dictionary_notation():
     a = User({"oid": "bc5f60df-4c27-49c1-8466-acf32618a6d2"})
 
