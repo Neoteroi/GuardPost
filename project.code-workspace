@@ -24,10 +24,5 @@
                 100
             ]
         }
-    },
-    "extensions": {
-        "recommendations": [
-            "njpwerner.autodocstring"
-        ]
     }
 }
