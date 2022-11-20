@@ -1,26 +1,17 @@
-import json
 import time
 from typing import Any, Dict
 
 import jwt
-import pkg_resources
 import pytest
 
-from guardpost.jwks import JWKS, InMemoryKeysProvider, KeysProvider
+from guardpost.jwks import InMemoryKeysProvider, KeysProvider
 from guardpost.jwks.caching import CachingKeysProvider
 from guardpost.jwks.openid import AuthorityKeysProvider
 from guardpost.jwks.urls import URLKeysProvider
 from guardpost.jwts import InvalidAccessToken, JWTValidator
 
-
-def get_file_path(file_name, folder_name: str = "res") -> str:
-    return pkg_resources.resource_filename(__name__, f"./{folder_name}/{file_name}")
-
-
-def get_test_jwks() -> JWKS:
-    with open(get_file_path("jwks.json"), mode="rt", encoding="utf8") as jwks_file:
-        jwks_dict = json.loads(jwks_file.read())
-    return JWKS.from_dict(jwks_dict)
+from .serverfixtures import *  # noqa
+from .serverfixtures import BASE_URL, get_file_path, get_test_jwks
 
 
 @pytest.fixture(scope="session")
@@ -121,9 +112,7 @@ async def test_jwt_validator_blocks_invalid_kid(default_keys_provider):
 
 @pytest.mark.asyncio
 async def test_jwt_validator_can_validate_access_tokens_from_well_known_oidc_conf():
-    authority = (
-        "https://raw.githubusercontent.com/Neoteroi/BlackSheep-Examples/jwks/.res"
-    )
+    authority = BASE_URL + "/"
     validator = JWTValidator(
         valid_audiences=["a"], valid_issuers=["b"], authority=authority
     )
@@ -139,10 +128,7 @@ async def test_jwt_validator_can_validate_access_tokens_from_well_known_oidc_con
 
 @pytest.mark.asyncio
 async def test_jwt_validator_can_validate_access_tokens_from_url():
-    url = (
-        "https://raw.githubusercontent.com/Neoteroi/BlackSheep-Examples/jwks/.res/"
-        ".well-known/jwks.json"
-    )
+    url = BASE_URL + "/.well-known/jwks.json"
     validator = JWTValidator(valid_audiences=["a"], valid_issuers=["b"], keys_url=url)
 
     keys_provider = validator._keys_provider

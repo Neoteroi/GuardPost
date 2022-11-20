@@ -6,3 +6,4 @@ PyJWT~=2.3.0
 isort==5.9.3
 cryptography~=35.0.0
 black
+flask==2.2.2
