@@ -1,7 +1,7 @@
 import pytest
 
-from guardpost.errors import UnsupportedFeatureError
-from guardpost.jwks import JWK, JWKS, KeyType
+from neoteroi.auth.errors import UnsupportedFeatureError
+from neoteroi.auth.jwks import JWK, JWKS, KeyType
 
 
 def test_keytype_from_str():

@@ -1,7 +1,7 @@
 from pytest import raises
 
-from guardpost.authentication import User
-from guardpost.synchronous.authentication import (
+from neoteroi.auth.authentication import User
+from neoteroi.auth.synchronous.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
 )

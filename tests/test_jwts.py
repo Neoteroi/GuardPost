@@ -4,11 +4,11 @@ from typing import Any, Dict
 import jwt
 import pytest
 
-from guardpost.jwks import InMemoryKeysProvider, KeysProvider
-from guardpost.jwks.caching import CachingKeysProvider
-from guardpost.jwks.openid import AuthorityKeysProvider
-from guardpost.jwks.urls import URLKeysProvider
-from guardpost.jwts import InvalidAccessToken, JWTValidator
+from neoteroi.auth.jwks import InMemoryKeysProvider, KeysProvider
+from neoteroi.auth.jwks.caching import CachingKeysProvider
+from neoteroi.auth.jwks.openid import AuthorityKeysProvider
+from neoteroi.auth.jwks.urls import URLKeysProvider
+from neoteroi.auth.jwts import InvalidAccessToken, JWTValidator
 
 from .serverfixtures import *  # noqa
 from .serverfixtures import BASE_URL, get_file_path, get_test_jwks

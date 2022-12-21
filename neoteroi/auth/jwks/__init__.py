@@ -8,7 +8,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 
-from guardpost.errors import UnsupportedFeatureError
+from neoteroi.auth.errors import UnsupportedFeatureError
 
 
 def _raise_if_missing(value: dict, *keys: str) -> None:

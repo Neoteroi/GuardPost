@@ -2,14 +2,14 @@ from typing import Any, Optional
 
 from pytest import raises
 
-from guardpost.authentication import Identity
-from guardpost.authorization import Policy, UnauthorizedError
-from guardpost.common import AnonymousPolicy, AuthenticatedRequirement
-from guardpost.synchronous.authentication import (
+from neoteroi.auth.authentication import Identity
+from neoteroi.auth.authorization import Policy, UnauthorizedError
+from neoteroi.auth.common import AnonymousPolicy, AuthenticatedRequirement
+from neoteroi.auth.synchronous.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
 )
-from guardpost.synchronous.authorization import AuthorizationStrategy
+from neoteroi.auth.synchronous.authorization import AuthorizationStrategy
 
 
 def test_policy_without_requirements_always_succeeds():

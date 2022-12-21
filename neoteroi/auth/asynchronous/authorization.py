@@ -2,8 +2,8 @@ from abc import abstractmethod
 from functools import wraps
 from typing import Dict, Optional
 
-from guardpost.authentication import Identity
-from guardpost.authorization import (
+from neoteroi.auth.authentication import Identity
+from neoteroi.auth.authorization import (
     AuthorizationContext,
     BaseAuthorizationStrategy,
     BaseRequirement,
@@ -11,8 +11,8 @@ from guardpost.authorization import (
     PolicyNotFoundError,
     UnauthorizedError,
 )
-from guardpost.funchelper import args_to_dict_getter
-from guardpost.synchronous.authorization import Requirement as SyncRequirement
+from neoteroi.auth.funchelper import args_to_dict_getter
+from neoteroi.auth.synchronous.authorization import Requirement as SyncRequirement
 
 
 class AsyncRequirement(BaseRequirement):

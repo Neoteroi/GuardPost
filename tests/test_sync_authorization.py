@@ -2,10 +2,10 @@ from typing import Sequence
 
 from pytest import raises
 
-from guardpost.authentication import User
-from guardpost.authorization import Policy, PolicyNotFoundError
-from guardpost.common import AuthenticatedRequirement
-from guardpost.synchronous.authorization import (
+from neoteroi.auth.authentication import User
+from neoteroi.auth.authorization import Policy, PolicyNotFoundError
+from neoteroi.auth.common import AuthenticatedRequirement
+from neoteroi.auth.synchronous.authorization import (
     AuthorizationContext,
     AuthorizationStrategy,
     Requirement,

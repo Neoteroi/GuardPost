@@ -1,5 +1,5 @@
-from abc import ABC
-from typing import Optional, Sequence
+from abc import ABC, abstractmethod
+from typing import Any, Optional, Sequence
 
 
 class Identity:
@@ -52,6 +52,10 @@ class BaseAuthenticationHandler(ABC):
         """Returns the name of the Authentication Scheme used by this handler."""
         return self.__class__.__name__
 
+    @abstractmethod
+    def authenticate(self, context: Any) -> Optional[Identity]:
+        """Obtains an identity from a context."""
+
 
 class AuthenticationSchemesNotFound(ValueError):
     def __init__(
@@ -94,3 +98,9 @@ class BaseAuthenticationStrategy(ABC):
             )
 
         return handlers
+
+    @abstractmethod
+    def authenticate(
+        self, context: Any, authentication_schemes: Optional[Sequence[str]] = None
+    ) -> None:
+        """Tries to set user context on the given object."""

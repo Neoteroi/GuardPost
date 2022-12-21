@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Callable, Dict, List, Optional, Sequence
 
-from guardpost.authentication import Identity
+from neoteroi.auth.authentication import Identity
 
 
 class AuthorizationError(Exception):

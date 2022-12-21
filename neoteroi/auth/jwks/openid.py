@@ -1,4 +1,4 @@
-from guardpost.utils import get_running_loop, read_json_data
+from neoteroi.auth.utils import get_running_loop, read_json_data
 
 from . import JWKS, KeysProvider
 

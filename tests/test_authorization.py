@@ -3,16 +3,16 @@ from typing import Sequence
 import pytest
 from pytest import raises
 
-from guardpost.asynchronous.authorization import AsyncRequirement as Requirement
-from guardpost.asynchronous.authorization import AuthorizationStrategy
-from guardpost.authentication import User
-from guardpost.authorization import (
+from neoteroi.auth.asynchronous.authorization import AsyncRequirement as Requirement
+from neoteroi.auth.asynchronous.authorization import AuthorizationStrategy
+from neoteroi.auth.authentication import User
+from neoteroi.auth.authorization import (
     AuthorizationContext,
     Policy,
     PolicyNotFoundError,
     UnauthorizedError,
 )
-from guardpost.common import AuthenticatedRequirement, ClaimsRequirement
+from neoteroi.auth.common import AuthenticatedRequirement, ClaimsRequirement
 from tests.examples import NoopRequirement
 
 

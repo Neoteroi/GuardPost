@@ -3,11 +3,11 @@ from typing import Any, Optional
 import pytest
 from pytest import raises
 
-from guardpost.asynchronous.authentication import (
+from neoteroi.auth.asynchronous.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
 )
-from guardpost.authentication import AuthenticationSchemesNotFound, Identity, User
+from neoteroi.auth.authentication import AuthenticationSchemesNotFound, Identity, User
 from tests.examples import Request
 
 

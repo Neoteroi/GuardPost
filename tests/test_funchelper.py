@@ -1,4 +1,4 @@
-from guardpost.funchelper import args_to_dict_getter
+from neoteroi.auth.funchelper import args_to_dict_getter
 
 
 def test_args_to_dict_getter():

@@ -7,7 +7,7 @@ import pkg_resources
 import pytest
 from flask import Flask
 
-from guardpost.jwks import JWKS
+from neoteroi.auth.jwks import JWKS
 
 SERVER_PORT = 44777
 BASE_URL = f"http://127.0.0.1:{SERVER_PORT}"
