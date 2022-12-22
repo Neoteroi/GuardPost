@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 
 class Identity:
     def __init__(
         self,
-        claims: dict,
+        claims: Optional[dict] = None,
         authentication_mode: Optional[str] = None,
     ):
         self.claims = claims or {}
@@ -44,8 +44,8 @@ class User(Identity):
         return self["email"]
 
 
-class BaseAuthenticationHandler(ABC):
-    """Base class for authentication handlers"""
+class AuthenticationHandler(ABC):
+    """Base class for types that implement authentication logic."""
 
     @property
     def scheme(self) -> str:
@@ -53,7 +53,7 @@ class BaseAuthenticationHandler(ABC):
         return self.__class__.__name__
 
     @abstractmethod
-    def authenticate(self, context: Any) -> Optional[Identity]:
+    async def authenticate(self, context: Any) -> Optional[Identity]:
         """Obtains an identity from a context."""
 
 
@@ -69,20 +69,20 @@ class AuthenticationSchemesNotFound(ValueError):
 
 
 class BaseAuthenticationStrategy(ABC):
-    def __init__(self, *handlers: BaseAuthenticationHandler):
+    def __init__(self, *handlers: AuthenticationHandler):
         self.handlers = list(handlers)
 
-    def add(self, handler: BaseAuthenticationHandler) -> "BaseAuthenticationStrategy":
+    def add(self, handler: AuthenticationHandler) -> "BaseAuthenticationStrategy":
         self.handlers.append(handler)
         return self
 
-    def __iadd__(
-        self, handler: BaseAuthenticationHandler
-    ) -> "BaseAuthenticationStrategy":
+    def __iadd__(self, handler: AuthenticationHandler) -> "BaseAuthenticationStrategy":
         self.handlers.append(handler)
         return self
 
-    def get_handlers(self, authentication_schemes: Optional[Sequence[str]] = None):
+    def get_handlers(
+        self, authentication_schemes: Optional[Sequence[str]] = None
+    ) -> List[AuthenticationHandler]:
         if not authentication_schemes:
             return self.handlers
 
@@ -100,7 +100,23 @@ class BaseAuthenticationStrategy(ABC):
         return handlers
 
     @abstractmethod
-    def authenticate(
+    async def authenticate(
         self, context: Any, authentication_schemes: Optional[Sequence[str]] = None
-    ) -> None:
-        """Tries to set user context on the given object."""
+    ):
+        """
+        Tries to obtain the user for a context, applying authentication rules.
+        """
+
+
+class AuthenticationStrategy(BaseAuthenticationStrategy):
+    async def authenticate(
+        self, context: Any, authentication_schemes: Optional[Sequence[str]] = None
+    ):
+        if not context:
+            raise ValueError("Missing context to evaluate authentication")
+
+        for handler in self.get_handlers(authentication_schemes):
+            identity = await handler.authenticate(context)
+
+            if identity:
+                break

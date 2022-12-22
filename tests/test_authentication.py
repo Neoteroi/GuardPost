@@ -3,7 +3,7 @@ from typing import Any, Optional
 import pytest
 from pytest import raises
 
-from neoteroi.auth.asynchronous.authentication import (
+from neoteroi.auth.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
 )
@@ -77,7 +77,7 @@ def test_has_claim_value():
 
 
 def test_claims_default():
-    a = Identity({})
+    a = Identity()
 
     assert a.claims.get("oid") is None
 

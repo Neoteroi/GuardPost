@@ -3,8 +3,8 @@ from typing import Sequence
 import pytest
 from pytest import raises
 
-from neoteroi.auth.asynchronous.authorization import AsyncRequirement as Requirement
-from neoteroi.auth.asynchronous.authorization import AuthorizationStrategy
+from neoteroi.auth.authorization import Requirement
+from neoteroi.auth.authorization import AuthorizationStrategy
 from neoteroi.auth.authentication import User
 from neoteroi.auth.authorization import (
     AuthorizationContext,

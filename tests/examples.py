@@ -1,5 +1,4 @@
-from neoteroi.auth.authorization import AuthorizationContext
-from neoteroi.auth.synchronous.authorization import Requirement
+from neoteroi.auth.authorization import AuthorizationContext, Requirement
 
 
 class Request:

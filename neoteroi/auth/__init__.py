@@ -1,8 +1,8 @@
-from .authentication import Identity, User
+from .authentication import AuthenticationStrategy, Identity, User
 from .authorization import (
     AuthorizationError,
-    BaseRequirement,
     Policy,
     PolicyNotFoundError,
+    Requirement,
     UnauthorizedError,
 )

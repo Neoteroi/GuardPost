@@ -1,35 +1,37 @@
 from typing import Any, Optional
 
+import pytest
 from pytest import raises
 
-from neoteroi.auth.authentication import Identity
-from neoteroi.auth.authorization import Policy, UnauthorizedError
-from neoteroi.auth.common import AnonymousPolicy, AuthenticatedRequirement
-from neoteroi.auth.synchronous.authentication import (
+from neoteroi.auth.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
+    Identity,
 )
-from neoteroi.auth.synchronous.authorization import AuthorizationStrategy
+from neoteroi.auth.authorization import AuthorizationStrategy, Policy, UnauthorizedError
+from neoteroi.auth.common import (
+    AnonymousPolicy,
+    AnonymousRequirement,
+    AuthenticatedRequirement,
+)
 
 
-def test_policy_without_requirements_always_succeeds():
+@pytest.mark.asyncio
+async def test_policy_without_requirements_always_succeeds():
     # a policy without requirements is a no-op policy that always succeeds,
     # even when there is no known identity
     strategy = AuthorizationStrategy(Policy("default"))
 
-    strategy.authorize("default", None)
-
-    strategy.authorize("default", Identity({}))
+    await strategy.authorize("default", Identity())
 
     assert True
 
 
-def test_anonymous_policy():
+@pytest.mark.asyncio
+async def test_anonymous_policy():
     strategy = AuthorizationStrategy(default_policy=AnonymousPolicy())
 
-    strategy.authorize(None, None)
-
-    strategy.authorize(None, Identity({}))
+    await strategy.authorize(None, Identity())
 
     assert True
 
@@ -51,7 +53,7 @@ def test_policy_iadd_syntax_raises_for_non_requirements():
     with raises(
         ValueError, match="Only requirements can be added using __iadd__ syntax"
     ):
-        strategy.default_policy += object()
+        strategy.default_policy += object()  # type: ignore
 
 
 def test_policy_add_method():
