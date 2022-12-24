@@ -1,8 +1,19 @@
+import inspect
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Sequence
+from functools import cache
+from typing import Any, List, Optional, Sequence, Type, Union
+
+from rodi import ContainerProtocol
+
+from neoteroi.auth.abc import BaseStrategy
 
 
 class Identity:
+    """
+    Represents the characteristics of a person or a thing in the context of an
+    application. It can be a user interacting with an app, or a technical account.
+    """
+
     def __init__(
         self,
         claims: Optional[dict] = None,
@@ -53,8 +64,20 @@ class AuthenticationHandler(ABC):
         return self.__class__.__name__
 
     @abstractmethod
-    async def authenticate(self, context: Any) -> Optional[Identity]:
+    def authenticate(self, context: Any) -> Optional[Identity]:
         """Obtains an identity from a context."""
+
+
+@cache
+def _is_async_handler(handler_type: Type[AuthenticationHandler]) -> bool:
+    # Faster alternative to using inspect.iscoroutinefunction without caching
+    # Note: this must be used on Types - not instances!
+    return inspect.iscoroutinefunction(handler_type.authenticate)
+
+
+AuthenticationHandlerConfType = Union[
+    AuthenticationHandler, Type[AuthenticationHandler]
+]
 
 
 class AuthenticationSchemesNotFound(ValueError):
@@ -68,55 +91,69 @@ class AuthenticationSchemesNotFound(ValueError):
         )
 
 
-class BaseAuthenticationStrategy(ABC):
-    def __init__(self, *handlers: AuthenticationHandler):
+class AuthenticationStrategy(BaseStrategy):
+    def __init__(
+        self,
+        *handlers: AuthenticationHandlerConfType,
+        container: Optional[ContainerProtocol] = None,
+    ):
+        super().__init__(container)
         self.handlers = list(handlers)
 
-    def add(self, handler: AuthenticationHandler) -> "BaseAuthenticationStrategy":
+    def add(self, handler: AuthenticationHandlerConfType) -> "AuthenticationStrategy":
         self.handlers.append(handler)
         return self
 
-    def __iadd__(self, handler: AuthenticationHandler) -> "BaseAuthenticationStrategy":
+    def __iadd__(
+        self, handler: AuthenticationHandlerConfType
+    ) -> "AuthenticationStrategy":
         self.handlers.append(handler)
         return self
 
-    def get_handlers(
-        self, authentication_schemes: Optional[Sequence[str]] = None
+    def _get_handlers_by_schemes(
+        self,
+        authentication_schemes: Optional[Sequence[str]] = None,
+        context: Any = None,
     ) -> List[AuthenticationHandler]:
         if not authentication_schemes:
-            return self.handlers
+            return list(self._get_instances(self.handlers, context))
 
         handlers = [
             handler
-            for handler in self.handlers
+            for handler in self._get_instances(self.handlers, context)
             if handler.scheme in authentication_schemes
         ]
 
         if not handlers:
             raise AuthenticationSchemesNotFound(
-                [handler.scheme for handler in self.handlers], authentication_schemes
+                [
+                    handler.scheme
+                    for handler in self._get_instances(self.handlers, context)
+                ],
+                authentication_schemes,
             )
 
         return handlers
 
-    @abstractmethod
     async def authenticate(
         self, context: Any, authentication_schemes: Optional[Sequence[str]] = None
-    ):
+    ) -> Optional[Identity]:
         """
         Tries to obtain the user for a context, applying authentication rules.
         """
-
-
-class AuthenticationStrategy(BaseAuthenticationStrategy):
-    async def authenticate(
-        self, context: Any, authentication_schemes: Optional[Sequence[str]] = None
-    ):
         if not context:
             raise ValueError("Missing context to evaluate authentication")
 
-        for handler in self.get_handlers(authentication_schemes):
-            identity = await handler.authenticate(context)
+        for handler in self._get_handlers_by_schemes(authentication_schemes, context):
+            if _is_async_handler(type(handler)):
+                identity = await handler.authenticate(context)  # type: ignore
+            else:
+                identity = handler.authenticate(context)
 
             if identity:
-                break
+                try:
+                    context.identity = identity
+                except AttributeError:
+                    pass
+                return identity
+        return None

@@ -2,12 +2,15 @@ from typing import Any, Optional
 
 import pytest
 from pytest import raises
+from rodi import Container
 
 from neoteroi.auth.authentication import (
     AuthenticationHandler,
+    AuthenticationSchemesNotFound,
     AuthenticationStrategy,
+    Identity,
+    User,
 )
-from neoteroi.auth.authentication import AuthenticationSchemesNotFound, Identity, User
 from tests.examples import Request
 
 
@@ -177,3 +180,27 @@ def test_default_authentication_scheme_name_matches_class_name():
 
     assert Basic().scheme == "Basic"
     assert Foo().scheme == "Foo"
+
+
+class Foo:
+    pass
+
+
+class InjectedAuthenticationHandler(AuthenticationHandler):
+    service: Foo
+
+    def authenticate(self, context) -> Optional[Identity]:
+        return None
+
+
+@pytest.mark.asyncio
+async def test_authentication_di():
+    container = Container()
+
+    container.register(Foo)
+    container.register(InjectedAuthenticationHandler)  # TODO: auto register?
+
+    auth = AuthenticationStrategy(InjectedAuthenticationHandler, container=container)
+
+    result = await auth.authenticate("example")
+    assert result is None

@@ -9,11 +9,7 @@ from neoteroi.auth.authentication import (
     Identity,
 )
 from neoteroi.auth.authorization import AuthorizationStrategy, Policy, UnauthorizedError
-from neoteroi.auth.common import (
-    AnonymousPolicy,
-    AnonymousRequirement,
-    AuthenticatedRequirement,
-)
+from neoteroi.auth.common import AnonymousPolicy, AuthenticatedRequirement
 
 
 @pytest.mark.asyncio
@@ -51,7 +47,8 @@ def test_policy_iadd_syntax_raises_for_non_requirements():
     strategy = AuthorizationStrategy(default_policy=Policy("default"))
 
     with raises(
-        ValueError, match="Only requirements can be added using __iadd__ syntax"
+        ValueError,
+        match="Only instances, or types, of Requirement can be added to the policy.",
     ):
         strategy.default_policy += object()  # type: ignore
 

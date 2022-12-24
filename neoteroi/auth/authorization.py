@@ -1,8 +1,22 @@
 import inspect
 from abc import ABC, abstractmethod
-from functools import wraps
-from typing import Callable, Dict, Iterable, List, Optional, Sequence
+from functools import cache, wraps
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    Union,
+)
 
+from rodi import ContainerProtocol
+
+from neoteroi.auth.abc import BaseStrategy
 from neoteroi.auth.authentication import Identity
 from neoteroi.auth.funchelper import args_to_dict_getter
 
@@ -27,8 +41,18 @@ class Requirement(ABC):
         return self.__class__.__name__
 
     @abstractmethod
-    def handle(self, context: "AuthorizationContext"):
+    async def handle(self, context: "AuthorizationContext"):
         """Handles this requirement for a given context."""
+
+
+RequirementConfType = Union[Requirement, Type[Requirement]]
+
+
+@cache
+def _is_async_handler(handler_type: Type[Requirement]) -> bool:
+    # Faster alternative to using inspect.iscoroutinefunction without caching
+    # Note: this must be used on Types - not instances!
+    return inspect.iscoroutinefunction(handler_type.handle)
 
 
 class UnauthorizedError(AuthorizationError):
@@ -80,8 +104,8 @@ class AuthorizationContext:
     def __init__(self, identity: Identity, requirements: Sequence[Requirement]):
         self.identity = identity
         self.requirements = requirements
-        self._succeeded = set()
-        self._failed_forced = None
+        self._succeeded: Set[Requirement] = set()
+        self._failed_forced: Optional[str] = None
 
     @property
     def pending_requirements(self) -> List[Requirement]:
@@ -95,7 +119,7 @@ class AuthorizationContext:
 
     @property
     def forced_failure(self) -> Optional[str]:
-        return self._failed_forced
+        return str(self._failed_forced)
 
     def fail(self, reason: str):
         """
@@ -115,25 +139,36 @@ class AuthorizationContext:
         self._succeeded.add(requirement)
 
     def clear(self):
-        self._failed_forced = False
+        self._failed_forced = None
         self._succeeded.clear()
 
 
 class Policy:
+    """
+    Represents an authorization policy, with a set of authorization rules.
+    """
 
     __slots__ = ("name", "requirements")
 
-    def __init__(self, name: str, *requirements: Requirement):
+    def __init__(self, name: str, *requirements: RequirementConfType):
         self.name = name
         self.requirements = list(requirements) or []
 
-    def add(self, requirement: Requirement) -> "Policy":
+    def _valid_requirement(self, obj):
+        if not isinstance(obj, Requirement) or (
+            isinstance(obj, type) and not issubclass(obj, Requirement)
+        ):
+            raise ValueError(
+                "Only instances, or types, of Requirement can be added to the policy."
+            )
+
+    def add(self, requirement: RequirementConfType) -> "Policy":
+        self._valid_requirement(requirement)
         self.requirements.append(requirement)
         return self
 
-    def __iadd__(self, other: Requirement):
-        if not isinstance(other, Requirement):
-            raise ValueError("Only requirements can be added using __iadd__ syntax")
+    def __iadd__(self, other: RequirementConfType):
+        self._valid_requirement(other)
         self.requirements.append(other)
         return self
 
@@ -141,13 +176,15 @@ class Policy:
         return f'<Policy "{self.name}" at {id(self)}>'
 
 
-class BaseAuthorizationStrategy(ABC):
+class AuthorizationStrategy(BaseStrategy):
     def __init__(
         self,
         *policies: Policy,
+        container: Optional[ContainerProtocol] = None,
         default_policy: Optional[Policy] = None,
         identity_getter: Optional[Callable[[Dict], Identity]] = None,
     ):
+        super().__init__(container)
         self.policies = list(policies)
         self.default_policy = default_policy
         self.identity_getter = identity_getter
@@ -158,46 +195,31 @@ class BaseAuthorizationStrategy(ABC):
                 return policy
         return None
 
-    def add(self, policy: Policy) -> "BaseAuthorizationStrategy":
+    def add(self, policy: Policy) -> "AuthorizationStrategy":
         self.policies.append(policy)
         return self
 
-    def __iadd__(self, policy: Policy) -> "BaseAuthorizationStrategy":
+    def __iadd__(self, policy: Policy) -> "AuthorizationStrategy":
         self.policies.append(policy)
         return self
 
-    def with_default_policy(self, policy: Policy) -> "BaseAuthorizationStrategy":
+    def with_default_policy(self, policy: Policy) -> "AuthorizationStrategy":
         self.default_policy = policy
         return self
 
-    @abstractmethod
-    async def authorize(self, policy_name: Optional[str], identity: Identity):
-        """
-        Applies authorization rules, raising an exception if the given identity is not
-        authorized.
-        """
-
-    @abstractmethod
-    def __call__(self, policy: Optional[str] = None):
-        """
-        Used to decorate a function to apply authorization checks on call.
-
-        TODO: document
-        """
-
-
-class AuthorizationStrategy(BaseAuthorizationStrategy):
-    async def authorize(self, policy_name: Optional[str], identity: Identity):
+    async def authorize(
+        self, policy_name: Optional[str], identity: Identity, scope: Any = None
+    ):
         if policy_name:
             policy = self.get_policy(policy_name)
 
             if not policy:
                 raise PolicyNotFoundError(policy_name)
 
-            await self._handle_with_policy(policy, identity)
+            await self._handle_with_policy(policy, identity, scope)
         else:
             if self.default_policy:
-                await self._handle_with_policy(self.default_policy, identity)
+                await self._handle_with_policy(self.default_policy, identity, scope)
                 return
 
             if not identity:
@@ -205,22 +227,19 @@ class AuthorizationStrategy(BaseAuthorizationStrategy):
             if not identity.is_authenticated():
                 raise UnauthorizedError("The resource requires authentication", [])
 
-    def _get_requirements(self, policy: Policy) -> Iterable[Requirement]:
-        ###
-        # TODO: instantiate requirements here! To support DI.
-        ###
-        for requirement in policy.requirements:
-            if isinstance(requirement, Requirement):
-                yield requirement
+    def _get_requirements(self, policy: Policy, scope: Any) -> Iterable[Requirement]:
+        yield from self._get_instances(policy.requirements, scope)
 
-    async def _handle_with_policy(self, policy: Policy, identity: Identity):
-        with AuthorizationContext(identity, policy.requirements) as context:
+    async def _handle_with_policy(self, policy: Policy, identity: Identity, scope: Any):
+        with AuthorizationContext(
+            identity, list(self._get_requirements(policy, scope))
+        ) as context:
 
-            for requirement in self._get_requirements(policy):
-                if inspect.iscoroutinefunction(requirement.handle):
+            for requirement in context.requirements:
+                if _is_async_handler(type(requirement)):  # type: ignore
                     await requirement.handle(context)
                 else:
-                    requirement.handle(context)
+                    requirement.handle(context)  # type: ignore
 
             if not context.has_succeeded:
                 raise UnauthorizedError(
@@ -235,6 +254,10 @@ class AuthorizationStrategy(BaseAuthorizationStrategy):
         await self.authorize(policy_name, self.identity_getter(arguments))
 
     def __call__(self, policy: Optional[str] = None):
+        """
+        Decorates a function to apply authorization logic on each call.
+        """
+
         def decorator(fn):
             args_getter = args_to_dict_getter(fn)
 

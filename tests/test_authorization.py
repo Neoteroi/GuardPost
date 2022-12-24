@@ -2,14 +2,15 @@ from typing import Sequence
 
 import pytest
 from pytest import raises
+from rodi import Container
 
-from neoteroi.auth.authorization import Requirement
-from neoteroi.auth.authorization import AuthorizationStrategy
-from neoteroi.auth.authentication import User
+from neoteroi.auth.authentication import Identity, User
 from neoteroi.auth.authorization import (
     AuthorizationContext,
+    AuthorizationStrategy,
     Policy,
     PolicyNotFoundError,
+    Requirement,
     UnauthorizedError,
 )
 from neoteroi.auth.common import AuthenticatedRequirement, ClaimsRequirement
@@ -340,3 +341,66 @@ def test_unauthorized_error_message():
     ex = UnauthorizedError(None, None)
 
     assert str(ex) == "Unauthorized"
+
+
+class Foo:
+    pass
+
+
+class InjectedRequirement(Requirement):
+    service: Foo
+
+    def handle(self, context):
+        assert isinstance(self.service, Foo)
+        context.succeed(self)
+
+
+class ScopedTestRequirement1(Requirement):
+    service_1: Foo
+    service_2: Foo
+
+    def handle(self, context):
+        assert isinstance(self.service_1, Foo)
+        assert self.service_1 is self.service_2
+        context.succeed(self)
+
+
+class ScopedTestRequirement2(Requirement):
+    foo: Foo
+    brother: ScopedTestRequirement1
+
+    def handle(self, context):
+        assert self.foo is self.brother.service_1
+        context.succeed(self)
+
+
+@pytest.mark.asyncio
+async def test_authorization_di():
+    container = Container()
+
+    container.register(Foo)
+    container.register(InjectedRequirement)  # TODO: auto register?
+
+    auth = AuthorizationStrategy(
+        Policy("example", InjectedRequirement), container=container
+    )
+
+    identity = Identity()
+    assert await auth.authorize("example", identity) is None
+
+
+@pytest.mark.asyncio
+async def test_authorization_di_scoped():
+    container = Container()
+
+    container.add_scoped(Foo)
+    container.register(ScopedTestRequirement1)
+    container.register(ScopedTestRequirement2)
+
+    auth = AuthorizationStrategy(
+        Policy("example", ScopedTestRequirement1, ScopedTestRequirement2),
+        container=container,
+    )
+
+    identity = Identity()
+    assert await auth.authorize("example", identity) is None

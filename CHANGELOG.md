@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   OAuth flows generally require fetching public RSA keys from well-known OIDC
   endpoints).
 - Replaces `setup.py` with `pyproject.toml`.
+- `mypy` checked
 
 ## [0.1.0] - 2022-11-06 :snake:
 - Workflow maintenance.
