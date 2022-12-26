@@ -119,7 +119,7 @@ class AuthorizationContext:
 
     @property
     def forced_failure(self) -> Optional[str]:
-        return str(self._failed_forced)
+        return None if self._failed_forced is None else str(self._failed_forced)
 
     def fail(self, reason: str):
         """

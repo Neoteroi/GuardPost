@@ -14,23 +14,27 @@ clean:
 
 
 prepforbuild:
-	pip install --upgrade twine setuptools wheel
+	pip install build
 
 
-uploadtest:
-	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+build:
+	python -m build
 
 
-release: clean artifacts
-	twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+test-release:
+	twine upload --repository testpypi dist/*
+
+
+release:
+	twine upload --repository pypi dist/*
 
 
 test:
 	python -m pytest
 
 
-testcov:
-	python -m pytest --cov-report html --cov=guardpost tests/
+test-cov:
+	python -m pytest --cov-report html --cov=neoteroi tests/
 
 
 lint: check-flake8 check-isort check-black

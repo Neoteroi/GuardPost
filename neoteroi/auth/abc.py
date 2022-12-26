@@ -46,10 +46,10 @@ class BaseStrategy(ABC):
         If the given context has a DI scope defined in "_di_scope" attribute, it is
         used to support scoped services.
         """
-        container = self.container
         scope = self._get_di_scope(scope)
         for obj in items:
             if isinstance(obj, type):
-                yield container.resolve(obj, scope=scope)
+                # a container is required
+                yield self.container.resolve(obj, scope=scope)
             else:
                 yield obj
