@@ -17,7 +17,7 @@ from neoteroi.auth.common import AuthenticatedRequirement, ClaimsRequirement
 from tests.examples import NoopRequirement
 
 
-def empty_identity_getter(_):
+def empty_identity_getter(*args, **kwargs):
     return None
 
 
@@ -156,8 +156,8 @@ class Request:
         self.user = user
 
 
-def request_identity_getter(args):
-    return args.get("request").user
+def request_identity_getter(request):
+    return request.user
 
 
 @pytest.mark.asyncio
@@ -327,7 +327,7 @@ async def test_auth_using_default_policy_succeeding():
 
 @pytest.mark.asyncio
 async def test_auth_without_policy_anonymous_identity():
-    auth: AuthorizationStrategy = get_strategy([], lambda _: User({"oid": "001"}))
+    auth: AuthorizationStrategy = get_strategy([], lambda: User({"oid": "001"}))
 
     @auth()
     async def some_method():

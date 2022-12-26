@@ -18,7 +18,6 @@ from neoteroi.di import ContainerProtocol
 
 from neoteroi.auth.abc import BaseStrategy
 from neoteroi.auth.authentication import Identity
-from neoteroi.auth.funchelper import args_to_dict_getter
 
 
 class AuthorizationError(Exception):
@@ -182,7 +181,7 @@ class AuthorizationStrategy(BaseStrategy):
         *policies: Policy,
         container: Optional[ContainerProtocol] = None,
         default_policy: Optional[Policy] = None,
-        identity_getter: Optional[Callable[[Dict], Identity]] = None,
+        identity_getter: Optional[Callable[..., Optional[Identity]]] = None,
     ):
         super().__init__(container)
         self.policies = list(policies)
@@ -247,11 +246,11 @@ class AuthorizationStrategy(BaseStrategy):
                 )
 
     async def _handle_with_identity_getter(
-        self, policy_name: Optional[str], arguments: Dict
+        self, policy_name: Optional[str], *args, **kwargs
     ):
         if self.identity_getter is None:
             raise TypeError("Missing identity getter function.")
-        await self.authorize(policy_name, self.identity_getter(arguments))
+        await self.authorize(policy_name, self.identity_getter(*args, **kwargs))
 
     def __call__(self, policy: Optional[str] = None):
         """
@@ -259,13 +258,9 @@ class AuthorizationStrategy(BaseStrategy):
         """
 
         def decorator(fn):
-            args_getter = args_to_dict_getter(fn)
-
             @wraps(fn)
             async def wrapper(*args, **kwargs):
-                await self._handle_with_identity_getter(
-                    policy, args_getter(args, kwargs)
-                )
+                await self._handle_with_identity_getter(policy, *args, **kwargs)
                 return await fn(*args, **kwargs)
 
             return wrapper
