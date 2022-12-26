@@ -2,7 +2,7 @@ from typing import Sequence
 
 import pytest
 from pytest import raises
-from rodi import Container
+from neoteroi.di import Container
 
 from neoteroi.auth.authentication import Identity, User
 from neoteroi.auth.authorization import (

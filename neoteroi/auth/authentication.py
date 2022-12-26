@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from functools import cache
 from typing import Any, List, Optional, Sequence, Type, Union
 
-from rodi import ContainerProtocol
+from neoteroi.di import ContainerProtocol
 
 from neoteroi.auth.abc import BaseStrategy
 

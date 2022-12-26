@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from rodi import ContainerProtocol
+from neoteroi.di import ContainerProtocol
 
 from neoteroi.auth.abc import BaseStrategy
 from neoteroi.auth.authentication import Identity

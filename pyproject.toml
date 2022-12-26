@@ -22,6 +22,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 keywords = ["authentication", "authorization", "identity", "claims", "strategy"]
+dependencies = [
+    "neoteroi-di~=2.0.0",
+]
 
 [project.optional-dependencies]
 jwt = [

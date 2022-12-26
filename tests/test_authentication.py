@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 import pytest
 from pytest import raises
-from rodi import Container
+from neoteroi.di import Container
 
 from neoteroi.auth.authentication import (
     AuthenticationHandler,
