@@ -181,7 +181,7 @@ class AuthorizationStrategy(BaseStrategy):
         *policies: Policy,
         container: Optional[ContainerProtocol] = None,
         default_policy: Optional[Policy] = None,
-        identity_getter: Optional[Callable[..., Optional[Identity]]] = None,
+        identity_getter: Optional[Callable[..., Identity]] = None,
     ):
         super().__init__(container)
         self.policies = list(policies)

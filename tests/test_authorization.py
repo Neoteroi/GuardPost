@@ -18,6 +18,10 @@ from tests.examples import NoopRequirement
 
 
 def empty_identity_getter(*args, **kwargs):
+    return Identity()
+
+
+def no_identity_getter():
     return None
 
 
@@ -289,6 +293,7 @@ async def test_claims_requirement_sequence():
 @pytest.mark.asyncio
 async def test_auth_without_policy_no_identity():
     auth: AuthorizationStrategy = get_strategy([])
+    auth.identity_getter = no_identity_getter  # type: ignore
 
     @auth()
     async def some_method():
