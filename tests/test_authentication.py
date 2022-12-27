@@ -56,7 +56,9 @@ def test_identity_dictionary_notation():
     a = Identity({"oid": "bc5f60df-4c27-49c1-8466-acf32618a6d2"})
 
     assert a["oid"] == "bc5f60df-4c27-49c1-8466-acf32618a6d2"
-    assert a["foo"] is None
+
+    with raises(KeyError):
+        a["foo"]
 
 
 def test_identity_sub():
@@ -69,7 +71,9 @@ def test_user_identity_dictionary_notation():
     a = User({"oid": "bc5f60df-4c27-49c1-8466-acf32618a6d2"})
 
     assert a["oid"] == "bc5f60df-4c27-49c1-8466-acf32618a6d2"
-    assert a["foo"] is None
+
+    with raises(KeyError):
+        a["foo"]
 
 
 def test_has_claim_value():

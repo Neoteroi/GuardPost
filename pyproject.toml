@@ -45,7 +45,10 @@ exclude = [
   "CODE_OF_CONDUCT.md",
   ".isort.cfg",
   ".gitignore",
-  ".flake8"
+  ".flake8",
+  "junit",
+  "neoteroi-auth.code-workspace",
+  "requirements.txt"
 ]
 
 [tool.hatch.version]

@@ -32,7 +32,7 @@ class Identity:
         return bool(self.authentication_mode)
 
     def __getitem__(self, item):
-        return self.claims.get(item)
+        return self.claims[item]
 
     def has_claim(self, name: str) -> bool:
         return name in self.claims
