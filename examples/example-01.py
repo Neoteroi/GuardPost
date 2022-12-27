@@ -29,6 +29,9 @@ class CustomAuthenticationHandler(AuthenticationHandler):
         return Identity({"sub": "example"})
 
 
+# NOTE: a AuthenticationHandler.authenticate method can also be async!
+
+
 async def main():
     some_context = MyAppContext()
 

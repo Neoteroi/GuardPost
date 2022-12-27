@@ -25,6 +25,9 @@ class MyRequirement(Requirement):
             context.fail("The user is not an ADMIN")
 
 
+# NOTE: a Requirement.handle method can also be async!
+
+
 async def main():
     authorization = AuthorizationStrategy(Policy("default", MyRequirement()))
 
