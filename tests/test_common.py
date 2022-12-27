@@ -1,8 +1,10 @@
 from typing import Any, Optional
 
 import pytest
+from neoteroi.di import Container
 from pytest import raises
 
+from neoteroi.auth.abc import DINotConfiguredError
 from neoteroi.auth.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
@@ -157,3 +159,19 @@ def test_unauthorized_error_supports_error_and_description():
     assert error.scheme == "Bearer"
     assert error.error == "invalid token"
     assert error.error_description == "The access token has expired"
+
+
+def test_strategy_set_container():
+    strategy = AuthenticationStrategy()
+    strategy.container = Container()
+
+
+def test_container_getter_raises_for_missing_container():
+    strategy = AuthenticationStrategy()
+
+    with raises(DINotConfiguredError):
+        strategy.container
+
+
+def test_import_version():
+    from neoteroi.auth.__about__ import __version__  # noqa

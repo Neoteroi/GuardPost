@@ -409,3 +409,16 @@ async def test_authorization_di_scoped():
 
     identity = Identity()
     assert await auth.authorize("example", identity) is None
+
+
+@pytest.mark.asyncio
+async def test_auth_raises_for_missing_identity_getter():
+    auth: AuthorizationStrategy = get_strategy([])
+    auth.identity_getter = None
+
+    @auth()
+    async def some_method():
+        return True
+
+    with raises(TypeError, match="Missing identity getter function."):
+        await some_method()

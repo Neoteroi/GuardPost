@@ -1,8 +1,9 @@
 from typing import Any, Optional
+from uuid import uuid4
 
 import pytest
-from pytest import raises
 from neoteroi.di import Container
+from pytest import raises
 
 from neoteroi.auth.authentication import (
     AuthenticationHandler,
@@ -204,3 +205,30 @@ async def test_authentication_di():
 
     result = await auth.authenticate("example")
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_authenticate_set_identity_context_attribute_error_handling():
+    """
+    Tests that trying to set the identity on a context that does not support setting
+    attributes does not cause an exception.
+    """
+    test_id = uuid4()
+    container = Container()
+
+    class TestHandler(AuthenticationHandler):
+        def authenticate(self, context: Any) -> Optional[Identity]:
+            return Identity({"sub": test_id})
+
+    container.register(TestHandler)
+
+    auth = AuthenticationStrategy(TestHandler, container=container)
+
+    class A:
+        __slots__ = ("x",)
+
+    context = A()
+
+    result = await auth.authenticate(context)
+    assert isinstance(result, Identity)
+    assert result.sub == test_id

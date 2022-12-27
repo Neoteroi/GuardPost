@@ -12,7 +12,7 @@ on:
       - "*"
 
 env:
-  PROJECT_NAME: guardpost
+  PROJECT_NAME: neoteroi
 
 jobs:
   build:
@@ -29,7 +29,7 @@ jobs:
           submodules: false
 
       - name: Use Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -61,7 +61,7 @@ jobs:
 
       - name: Run mypy checks
         run: |
-          mypy neoteroi --explicit-package-bases
+          mypy $PROJECT_NAME --explicit-package-bases
 
       - name: Run tests
         run: |
@@ -79,19 +79,19 @@ jobs:
           bash <(curl -s https://codecov.io/bash)
 
       - name: Install distribution dependencies
-        run: pip install --upgrade twine setuptools wheel
-        if: matrix.python-version == 3.8 || matrix.python-version == 3.9
+        run: pip install --upgrade build
+        if: matrix.python-version == "3.11"
 
       - name: Create distribution package
-        run: python setup.py sdist bdist_wheel
-        if: matrix.python-version == 3.8 || matrix.python-version == 3.9
+        run: python -m build
+        if: matrix.python-version == "3.11"
 
       - name: Upload distribution package
         uses: actions/upload-artifact@master
         with:
-          name: dist-package-${{ matrix.python-version }}
+          name: dist
           path: dist
-        if: matrix.python-version == 3.8 || matrix.python-version == 3.9
+        if: matrix.python-version == "3.11"
 
   publish:
     runs-on: ubuntu-latest
@@ -101,7 +101,7 @@ jobs:
       - name: Download a distribution artifact
         uses: actions/download-artifact@v2
         with:
-          name: dist-package-3.9
+          name: dist
           path: dist
 
       - name: Use Python 3.11
@@ -118,11 +118,11 @@ jobs:
           twine upload -r testpypi dist/*
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.test_pypi_password }}
+          TWINE_PASSWORD: ${{ secrets.test_pypi_password2 }}
 
       - name: Publish distribution 📦 to PyPI
         run: |
           twine upload -r pypi dist/*
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_password }}
+          TWINE_PASSWORD: ${{ secrets.pypi_password2 }}

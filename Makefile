@@ -6,7 +6,7 @@ lint-types:
 
 
 artifacts: test
-	python setup.py sdist bdist_wheel
+	python -m build
 
 
 clean:
