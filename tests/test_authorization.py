@@ -1,8 +1,8 @@
 from typing import Sequence
 
 import pytest
-from pytest import raises
 from neoteroi.di import Container
+from pytest import raises
 
 from neoteroi.auth.authentication import Identity, User
 from neoteroi.auth.authorization import (
