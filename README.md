@@ -37,9 +37,9 @@ pip install neoteroi-auth[jwt]
 For examples, refer to the [examples folder](./examples).
 
 ## If you have doubts about authentication vs authorization...
-`Authentication` answers the question: _Who is the user who is executing the
+`Authentication` answers the question: _Who is the user who is initiating the
 action?_, or more in general: _Who is the user, or what is the service, that is
-executing the action?_.
+initiating the action?_.
 
 `Authorization` answers the question: _Is the user, or service, authorized to
 do something?_.

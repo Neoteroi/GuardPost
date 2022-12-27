@@ -16,7 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reduces imports verbosity.
 - Improves the `identity_getter` code API.
 - Corrects `Identity.__getitem__` to raise `KeyError` if a claim is missing.
-- `mypy` checked.
 
 ## [0.1.0] - 2022-11-06 :snake:
 - Workflow maintenance.

@@ -59,10 +59,6 @@ jobs:
           black --check $PROJECT_NAME 2>&1
           black --check tests 2>&1
 
-      - name: Run mypy checks
-        run: |
-          mypy $PROJECT_NAME --explicit-package-bases
-
       - name: Run tests
         run: |
           pip install -e .
