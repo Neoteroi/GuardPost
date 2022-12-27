@@ -23,7 +23,7 @@ classifiers = [
 ]
 keywords = ["authentication", "authorization", "identity", "claims", "strategy"]
 dependencies = [
-    "neoteroi-di~=2.0.0",
+    "neoteroi-di<=2.0.0",
 ]
 
 [project.optional-dependencies]

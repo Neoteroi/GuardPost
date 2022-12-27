@@ -1,52 +1,40 @@
 [![Build](https://github.com/Neoteroi/guardpost/workflows/Build/badge.svg)](https://github.com/Neoteroi/guardpost/actions?query=workflow%3ABuild)
-[![pypi](https://img.shields.io/pypi/v/guardpost.svg?color=blue)](https://pypi.org/project/guardpost/)
-[![versions](https://img.shields.io/pypi/pyversions/guardpost.svg)](https://github.com/Neoteroi/guardpost)
-[![license](https://img.shields.io/github/license/Neoteroi/guardpost.svg)](https://github.com/Neoteroi/guardpost/blob/master/LICENSE)
-[![codecov](https://codecov.io/gh/Neoteroi/guardpost/branch/master/graph/badge.svg?token=sBKZG2D1bZ)](https://codecov.io/gh/Neoteroi/guardpost)
+[![pypi](https://img.shields.io/pypi/v/neoteroi-auth.svg?color=blue)](https://pypi.org/project/neoteroi-auth/)
+[![versions](https://img.shields.io/pypi/pyversions/neoteroi-auth.svg)](https://github.com/Neoteroi/guardpost)
+[![license](https://img.shields.io/github/license/Neoteroi/guardpost.svg)](https://github.com/Neoteroi/guardpost/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/Neoteroi/guardpost/branch/main/graph/badge.svg?token=sBKZG2D1bZ)](https://codecov.io/gh/Neoteroi/guardpost)
 
-# GuardPost
-GuardPost provides a basic framework to handle authentication and authorization
-in any kind of Python application.
+# Authentication and authorization framework for Python apps
+Basic framework to handle authentication and authorization in asynchronous
+Python applications.
 
-```bash
-pip install guardpost
-```
+**Features:**
 
-To install with support for `JSON Web Tokens (JWTs)` validation:
-
-```
-pip install guardpost[jwt]
-```
+- strategy to implement authentication (who or what is using a service?)
+- strategy to implement authorization (is the acting identity authorized to do a certain action?)
+- support for dependency injection for classes handling authentication and
+  authorization requirements
+- built-in support for JSON Web Tokens (JWTs) authentication
 
 This library is freely inspired by [authorization in ASP.NET
 Core](https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2);
 although its implementation is extremely different.
 
-Notable differences are:
-1. GuardPost is abstracted from the code that executes it, so it's not bound to
-   the context of a web framework.
-1. GuardPost implements both classes for use with synchronous code (not
-   necessarily I/O bound), and classes using `async/await` syntax (optimized
-   for authentication and authorization rules that involve I/O bound operations
-   such as web requests and communications with databases).
-1. GuardPost leverages Python function decorators for the authorization part,
-   so any function can be wrapped to be executed after handling authorization.
-1. The code API is simpler.
+## Installation
 
-## More documentation and examples
-For documentation and
-[examples](https://github.com/RobertoPrevato/GuardPost/wiki/Examples), refer to
-the project [Wiki](https://github.com/RobertoPrevato/GuardPost/wiki).
+```bash
+pip install neoteroi-auth
+```
 
-To see how `guardpost` is used in `blacksheep` web framework, read the
-documentation here:
+To install with support for `JSON Web Tokens (JWTs)` validation:
 
-* [Authentication](https://www.neoteroi.dev/blacksheep/authentication/)
-* [Authorization](https://www.neoteroi.dev/blacksheep/authorization/)
+```
+pip install neoteroi-auth[jwt]
+```
 
-## Both for async/await and synchronous code
-GuardPost can be used both with async/await code and with synchronous code,
-according to use cases and users' preference.
+### Examples
+
+For examples, refer to the [examples folder](./examples).
 
 ## If you have doubts about authentication vs authorization...
 `Authentication` answers the question: _Who is the user who is executing the
@@ -57,11 +45,20 @@ executing the action?_.
 do something?_.
 
 Usually, to implement authorization, is necessary to have the context of the
-entity that is executing the action. Anyway, the two things are logically
-separated and GuardPost is designed to keep them separate.
+entity that is executing the action.
 
 ## Usage in BlackSheep
-`guardpost` is used in the [BlackSheep](https://www.neoteroi.dev/blacksheep/)
-web framework to implement [authentication and authorization
+`neoteroi-auth` is used in the second version of the
+[BlackSheep](https://www.neoteroi.dev/blacksheep/) web framework, to implement
+[authentication and authorization
 strategies](https://www.neoteroi.dev/blacksheep/authentication/) for request
 handlers.
+
+To see how `neoteroi-auth` is used in `blacksheep` web framework, read:
+
+* [Authentication](https://www.neoteroi.dev/blacksheep/authentication/)
+* [Authorization](https://www.neoteroi.dev/blacksheep/authorization/)
+
+# Documentation
+
+Under construction. 🚧

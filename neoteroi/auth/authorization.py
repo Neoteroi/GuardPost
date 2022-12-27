@@ -1,18 +1,7 @@
 import inspect
 from abc import ABC, abstractmethod
 from functools import cache, wraps
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Type, Union
 
 from neoteroi.di import ContainerProtocol
 
