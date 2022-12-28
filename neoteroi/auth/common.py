@@ -2,12 +2,11 @@ from collections.abc import Mapping
 from typing import Mapping as MappingType
 from typing import Sequence, Union
 
-from .authorization import Policy
-from .synchronous.authorization import AuthorizationContext, Requirement
+from .authorization import AuthorizationContext, Policy, Requirement
 
 
 class AnonymousRequirement(Requirement):
-    """Requires an anonymous user, or service"""
+    """Requires an anonymous user, or service."""
 
     def handle(self, context: AuthorizationContext):
         identity = context.identity
@@ -17,14 +16,17 @@ class AnonymousRequirement(Requirement):
 
 
 class AnonymousPolicy(Policy):
-    """Policy that requires an anonymous user, or service"""
+    """Policy that requires an anonymous user, or service."""
 
     def __init__(self, name: str = "anonymous"):
         super().__init__(name, AnonymousRequirement())
 
 
 class AuthenticatedRequirement(Requirement):
-    """Requires an authenticated user, or service"""
+    """
+    Requires an authenticated user, or service. Meaning that an `identity` must be set
+    in the authorization context.
+    """
 
     def handle(self, context: AuthorizationContext):
         identity = context.identity

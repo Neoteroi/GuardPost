@@ -1,13 +1,17 @@
 from typing import Any, Optional
+from uuid import uuid4
 
 import pytest
+from neoteroi.di import Container
 from pytest import raises
 
-from guardpost.asynchronous.authentication import (
+from neoteroi.auth.authentication import (
     AuthenticationHandler,
+    AuthenticationSchemesNotFound,
     AuthenticationStrategy,
+    Identity,
+    User,
 )
-from guardpost.authentication import AuthenticationSchemesNotFound, Identity, User
 from tests.examples import Request
 
 
@@ -52,7 +56,9 @@ def test_identity_dictionary_notation():
     a = Identity({"oid": "bc5f60df-4c27-49c1-8466-acf32618a6d2"})
 
     assert a["oid"] == "bc5f60df-4c27-49c1-8466-acf32618a6d2"
-    assert a["foo"] is None
+
+    with raises(KeyError):
+        a["foo"]
 
 
 def test_identity_sub():
@@ -65,7 +71,9 @@ def test_user_identity_dictionary_notation():
     a = User({"oid": "bc5f60df-4c27-49c1-8466-acf32618a6d2"})
 
     assert a["oid"] == "bc5f60df-4c27-49c1-8466-acf32618a6d2"
-    assert a["foo"] is None
+
+    with raises(KeyError):
+        a["foo"]
 
 
 def test_has_claim_value():
@@ -77,7 +85,7 @@ def test_has_claim_value():
 
 
 def test_claims_default():
-    a = Identity({})
+    a = Identity()
 
     assert a.claims.get("oid") is None
 
@@ -177,3 +185,54 @@ def test_default_authentication_scheme_name_matches_class_name():
 
     assert Basic().scheme == "Basic"
     assert Foo().scheme == "Foo"
+
+
+class Foo:
+    pass
+
+
+class InjectedAuthenticationHandler(AuthenticationHandler):
+    service: Foo
+
+    def authenticate(self, context) -> Optional[Identity]:
+        return None
+
+
+@pytest.mark.asyncio
+async def test_authentication_di():
+    container = Container()
+
+    container.register(Foo)
+    container.register(InjectedAuthenticationHandler)  # TODO: auto register?
+
+    auth = AuthenticationStrategy(InjectedAuthenticationHandler, container=container)
+
+    result = await auth.authenticate("example")
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_authenticate_set_identity_context_attribute_error_handling():
+    """
+    Tests that trying to set the identity on a context that does not support setting
+    attributes does not cause an exception.
+    """
+    test_id = uuid4()
+    container = Container()
+
+    class TestHandler(AuthenticationHandler):
+        def authenticate(self, context: Any) -> Optional[Identity]:
+            return Identity({"sub": test_id})
+
+    container.register(TestHandler)
+
+    auth = AuthenticationStrategy(TestHandler, container=container)
+
+    class A:
+        __slots__ = ("x",)
+
+    context = A()
+
+    result = await auth.authenticate(context)
+    assert isinstance(result, Identity)
+    assert result.sub == test_id

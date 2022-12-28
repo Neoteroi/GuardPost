@@ -1,22 +1,27 @@
 from typing import Sequence
 
 import pytest
+from neoteroi.di import Container
 from pytest import raises
 
-from guardpost.asynchronous.authorization import AsyncRequirement as Requirement
-from guardpost.asynchronous.authorization import AuthorizationStrategy
-from guardpost.authentication import User
-from guardpost.authorization import (
+from neoteroi.auth.authentication import Identity, User
+from neoteroi.auth.authorization import (
     AuthorizationContext,
+    AuthorizationStrategy,
     Policy,
     PolicyNotFoundError,
+    Requirement,
     UnauthorizedError,
 )
-from guardpost.common import AuthenticatedRequirement, ClaimsRequirement
+from neoteroi.auth.common import AuthenticatedRequirement, ClaimsRequirement
 from tests.examples import NoopRequirement
 
 
-def empty_identity_getter(_):
+def empty_identity_getter(*args, **kwargs):
+    return Identity()
+
+
+def no_identity_getter():
     return None
 
 
@@ -155,8 +160,8 @@ class Request:
         self.user = user
 
 
-def request_identity_getter(args):
-    return args.get("request").user
+def request_identity_getter(request):
+    return request.user
 
 
 @pytest.mark.asyncio
@@ -288,6 +293,7 @@ async def test_claims_requirement_sequence():
 @pytest.mark.asyncio
 async def test_auth_without_policy_no_identity():
     auth: AuthorizationStrategy = get_strategy([])
+    auth.identity_getter = no_identity_getter  # type: ignore
 
     @auth()
     async def some_method():
@@ -326,7 +332,7 @@ async def test_auth_using_default_policy_succeeding():
 
 @pytest.mark.asyncio
 async def test_auth_without_policy_anonymous_identity():
-    auth: AuthorizationStrategy = get_strategy([], lambda _: User({"oid": "001"}))
+    auth: AuthorizationStrategy = get_strategy([], lambda: User({"oid": "001"}))
 
     @auth()
     async def some_method():
@@ -340,3 +346,79 @@ def test_unauthorized_error_message():
     ex = UnauthorizedError(None, None)
 
     assert str(ex) == "Unauthorized"
+
+
+class Foo:
+    pass
+
+
+class InjectedRequirement(Requirement):
+    service: Foo
+
+    def handle(self, context):
+        assert isinstance(self.service, Foo)
+        context.succeed(self)
+
+
+class ScopedTestRequirement1(Requirement):
+    service_1: Foo
+    service_2: Foo
+
+    def handle(self, context):
+        assert isinstance(self.service_1, Foo)
+        assert self.service_1 is self.service_2
+        context.succeed(self)
+
+
+class ScopedTestRequirement2(Requirement):
+    foo: Foo
+    brother: ScopedTestRequirement1
+
+    def handle(self, context):
+        assert self.foo is self.brother.service_1
+        context.succeed(self)
+
+
+@pytest.mark.asyncio
+async def test_authorization_di():
+    container = Container()
+
+    container.register(Foo)
+    container.register(InjectedRequirement)  # TODO: auto register?
+
+    auth = AuthorizationStrategy(
+        Policy("example", InjectedRequirement), container=container
+    )
+
+    identity = Identity()
+    assert await auth.authorize("example", identity) is None
+
+
+@pytest.mark.asyncio
+async def test_authorization_di_scoped():
+    container = Container()
+
+    container.add_scoped(Foo)
+    container.register(ScopedTestRequirement1)
+    container.register(ScopedTestRequirement2)
+
+    auth = AuthorizationStrategy(
+        Policy("example", ScopedTestRequirement1, ScopedTestRequirement2),
+        container=container,
+    )
+
+    identity = Identity()
+    assert await auth.authorize("example", identity) is None
+
+
+@pytest.mark.asyncio
+async def test_auth_raises_for_missing_identity_getter():
+    auth: AuthorizationStrategy = get_strategy([])
+    auth.identity_getter = None
+
+    @auth()
+    async def some_method():
+        return True
+
+    with raises(TypeError, match="Missing identity getter function."):
+        await some_method()

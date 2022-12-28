@@ -11,7 +11,6 @@
         "files.trimTrailingWhitespace": true,
         "files.trimFinalNewlines": true,
         "python.testing.unittestEnabled": false,
-        "python.testing.nosetestsEnabled": false,
         "python.testing.pytestEnabled": true,
         "python.linting.pylintEnabled": false,
         "python.linting.flake8Enabled": true,

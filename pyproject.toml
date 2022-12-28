@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "neoteroi-auth"
+dynamic = ["version"]
+authors = [
+    { name = "Roberto Prevato", email = "roberto.prevato@gmail.com" },
+]
+description = "Framework to handle authentication and authorization."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+keywords = ["authentication", "authorization", "identity", "claims", "strategy"]
+dependencies = [
+    "neoteroi-di<=2.0.0",
+]
+
+[project.optional-dependencies]
+jwt = [
+  "PyJWT",
+  "cryptography",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+  "/docs",
+  "/examples",
+  "/deps",
+  "/styles",
+  "/tests",
+  "mkdocs-plugins.code-workspace",
+  "Makefile",
+  "CODE_OF_CONDUCT.md",
+  ".isort.cfg",
+  ".gitignore",
+  ".flake8",
+  "junit",
+  "neoteroi-auth.code-workspace",
+  "requirements.txt",
+  "examples-summary.py"
+]
+
+[tool.hatch.version]
+path = "neoteroi/auth/__about__.py"
+
+[project.urls]
+"Homepage" = "https://github.com/Neoteroi/auth"
+"Bug Tracker" = "https://github.com/Neoteroi/auth/issues"

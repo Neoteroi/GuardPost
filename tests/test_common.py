@@ -1,35 +1,35 @@
 from typing import Any, Optional
 
+import pytest
+from neoteroi.di import Container
 from pytest import raises
 
-from guardpost.authentication import Identity
-from guardpost.authorization import Policy, UnauthorizedError
-from guardpost.common import AnonymousPolicy, AuthenticatedRequirement
-from guardpost.synchronous.authentication import (
+from neoteroi.auth.abc import DINotConfiguredError
+from neoteroi.auth.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
+    Identity,
 )
-from guardpost.synchronous.authorization import AuthorizationStrategy
+from neoteroi.auth.authorization import AuthorizationStrategy, Policy, UnauthorizedError
+from neoteroi.auth.common import AnonymousPolicy, AuthenticatedRequirement
 
 
-def test_policy_without_requirements_always_succeeds():
+@pytest.mark.asyncio
+async def test_policy_without_requirements_always_succeeds():
     # a policy without requirements is a no-op policy that always succeeds,
     # even when there is no known identity
     strategy = AuthorizationStrategy(Policy("default"))
 
-    strategy.authorize("default", None)
-
-    strategy.authorize("default", Identity({}))
+    await strategy.authorize("default", Identity())
 
     assert True
 
 
-def test_anonymous_policy():
+@pytest.mark.asyncio
+async def test_anonymous_policy():
     strategy = AuthorizationStrategy(default_policy=AnonymousPolicy())
 
-    strategy.authorize(None, None)
-
-    strategy.authorize(None, Identity({}))
+    await strategy.authorize(None, Identity())
 
     assert True
 
@@ -49,9 +49,10 @@ def test_policy_iadd_syntax_raises_for_non_requirements():
     strategy = AuthorizationStrategy(default_policy=Policy("default"))
 
     with raises(
-        ValueError, match="Only requirements can be added using __iadd__ syntax"
+        ValueError,
+        match="Only instances, or types, of Requirement can be added to the policy.",
     ):
-        strategy.default_policy += object()
+        strategy.default_policy += object()  # type: ignore
 
 
 def test_policy_add_method():
@@ -158,3 +159,19 @@ def test_unauthorized_error_supports_error_and_description():
     assert error.scheme == "Bearer"
     assert error.error == "invalid token"
     assert error.error_description == "The access token has expired"
+
+
+def test_strategy_set_container():
+    strategy = AuthenticationStrategy()
+    strategy.container = Container()
+
+
+def test_container_getter_raises_for_missing_container():
+    strategy = AuthenticationStrategy()
+
+    with raises(DINotConfiguredError):
+        strategy.container
+
+
+def test_import_version():
+    from neoteroi.auth.__about__ import __version__  # noqa
