@@ -2,8 +2,6 @@
 This example illustrates a basic use of the authentication strategy, showing how
 authentication handlers can be grouped by authentication schemes.
 """
-from __future__ import annotations
-
 import asyncio
 
 from neoteroi.auth import AuthenticationHandler, AuthenticationStrategy, Identity
@@ -23,7 +21,7 @@ class AuthenticationHandlerOne(AuthenticationHandler):
     def scheme(self) -> str:
         return "one"
 
-    def authenticate(self, context: MyAppContext) -> Identity | None:
+    def authenticate(self, context: MyAppContext) -> "Identity | None":
         return Identity({"sub": "001"}, self.scheme)
 
 
@@ -32,7 +30,7 @@ class AuthenticationHandlerTwo(AuthenticationHandler):
     def scheme(self) -> str:
         return "two"
 
-    def authenticate(self, context: MyAppContext) -> Identity | None:
+    def authenticate(self, context: MyAppContext) -> "Identity | None":
         return Identity({"sub": "002"}, self.scheme)
 
 

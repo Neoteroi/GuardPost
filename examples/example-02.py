@@ -2,8 +2,6 @@
 This example illustrates a basic use of the authentication strategy, using more than
 one way to obtain the user's identity.
 """
-from __future__ import annotations
-
 import asyncio
 
 from neoteroi.auth import AuthenticationHandler, AuthenticationStrategy, Identity
@@ -19,7 +17,7 @@ class MyAppContext:
 
 
 class CustomAuthenticationHandler(AuthenticationHandler):
-    def authenticate(self, context: MyAppContext) -> Identity | None:
+    def authenticate(self, context: MyAppContext) -> "Identity | None":
         """
         In this example, we simulate a situation in which an identity cannot be
         determined for a context. Another Authenticationhandler
@@ -28,7 +26,7 @@ class CustomAuthenticationHandler(AuthenticationHandler):
 
 
 class AlternativeAuthenticationHandler(AuthenticationHandler):
-    def authenticate(self, context: MyAppContext) -> Identity | None:
+    def authenticate(self, context: MyAppContext) -> "Identity | None":
         return Identity({"sub": "002"})
 
 

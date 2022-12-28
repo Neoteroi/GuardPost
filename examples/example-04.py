@@ -2,8 +2,6 @@
 This example illustrates how dependency injection can be used for authentication
 handlers.
 """
-from __future__ import annotations
-
 import asyncio
 
 from neoteroi.di import Container
@@ -29,7 +27,7 @@ class MyAuthenticationHandler(AuthenticationHandler):
         # foo will be injected
         self.foo = foo
 
-    def authenticate(self, context: MyAppContext) -> Identity | None:
+    def authenticate(self, context: MyAppContext) -> "Identity | None":
         assert isinstance(self.foo, Foo)
         return Identity({"sub": "001"}, self.scheme)
 
