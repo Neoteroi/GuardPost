@@ -1,15 +1,17 @@
 """
 This example illustrates a basic use of an authorization strategy.
 """
+from __future__ import annotations
+
 import asyncio
 
 from neoteroi.auth import (
     AuthorizationContext,
+    AuthorizationError,
     AuthorizationStrategy,
     Identity,
     Policy,
     Requirement,
-    AuthorizationError,
     UnauthorizedError,
 )
 

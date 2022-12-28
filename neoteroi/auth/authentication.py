@@ -1,6 +1,6 @@
 import inspect
 from abc import ABC, abstractmethod
-from functools import cache
+from functools import lru_cache
 from typing import Any, List, Optional, Sequence, Type, Union
 
 from neoteroi.di import ContainerProtocol
@@ -68,7 +68,7 @@ class AuthenticationHandler(ABC):
         """Obtains an identity from a context."""
 
 
-@cache
+@lru_cache(maxsize=None)
 def _is_async_handler(handler_type: Type[AuthenticationHandler]) -> bool:
     # Faster alternative to using inspect.iscoroutinefunction without caching
     # Note: this must be used on Types - not instances!

@@ -1,6 +1,6 @@
 import inspect
 from abc import ABC, abstractmethod
-from functools import cache, wraps
+from functools import lru_cache, wraps
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Type, Union
 
 from neoteroi.di import ContainerProtocol
@@ -36,7 +36,7 @@ class Requirement(ABC):
 RequirementConfType = Union[Requirement, Type[Requirement]]
 
 
-@cache
+@lru_cache(maxsize=None)
 def _is_async_handler(handler_type: Type[Requirement]) -> bool:
     # Faster alternative to using inspect.iscoroutinefunction without caching
     # Note: this must be used on Types - not instances!
