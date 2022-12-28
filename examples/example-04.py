@@ -2,6 +2,8 @@
 This example illustrates how dependency injection can be used for authentication
 handlers.
 """
+from __future__ import annotations
+
 import asyncio
 
 from neoteroi.di import Container

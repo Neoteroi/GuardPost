@@ -2,6 +2,8 @@
 This example illustrates a basic use of the authentication strategy, using a single
 authentication handler.
 """
+from __future__ import annotations
+
 import asyncio
 
 from neoteroi.auth import AuthenticationHandler, AuthenticationStrategy, Identity
