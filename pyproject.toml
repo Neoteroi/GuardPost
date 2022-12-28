@@ -48,7 +48,8 @@ exclude = [
   ".flake8",
   "junit",
   "neoteroi-auth.code-workspace",
-  "requirements.txt"
+  "requirements.txt",
+  "examples-summary.py"
 ]
 
 [tool.hatch.version]

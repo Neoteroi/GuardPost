@@ -9,7 +9,8 @@ from neoteroi.auth import AuthenticationHandler, AuthenticationStrategy, Identit
 
 class MyAppContext:
     """
-    This represents a context for an application - it can be anything.
+    This represents a context for an application - it can be anything depending on
+    use cases and the user's notion of application context.
     """
 
     def __init__(self) -> None:

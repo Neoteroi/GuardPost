@@ -1,9 +1,12 @@
 """
-This example illustrates a basic use of an authorization strategy.
+This example illustrates a basic use of an authorization strategy, with support for
+dependency injection for authorization requirements.
 """
 from __future__ import annotations
 
 import asyncio
+
+from neoteroi.di import Container
 
 from neoteroi.auth import (
     AuthorizationContext,
@@ -16,8 +19,15 @@ from neoteroi.auth import (
 )
 
 
-class MyRequirement(Requirement):
+class Foo:
+    ...
+
+
+class MyInjectedRequirement(Requirement):
+    foo: Foo
+
     def handle(self, context: AuthorizationContext):
+        assert isinstance(self.foo, Foo)
         # EXAMPLE: implement here the desired notion / requirements for authorization
         #
         roles = context.identity["roles"]
@@ -31,7 +41,18 @@ class MyRequirement(Requirement):
 
 
 async def main():
-    authorization = AuthorizationStrategy(Policy("default", MyRequirement()))
+    container = Container()
+
+    # NOTE: the following classes are registered as transient services - therefore
+    # they are instantiated each time they are necessary.
+    # Refer to neoteroi-di documentation to know how to register singletons and scoped
+    # services.
+    container.register(Foo)
+    container.register(MyInjectedRequirement)
+
+    authorization = AuthorizationStrategy(
+        Policy("default", MyInjectedRequirement), container=container
+    )
 
     await authorization.authorize(
         "default", Identity({"sub": "example", "roles": ["ADMIN"]})
