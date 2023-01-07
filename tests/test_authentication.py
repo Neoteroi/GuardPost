@@ -2,10 +2,10 @@ from typing import Any, Optional
 from uuid import uuid4
 
 import pytest
-from neoteroi.di import Container
 from pytest import raises
+from rodi import Container
 
-from neoteroi.auth.authentication import (
+from guardpost.authentication import (
     AuthenticationHandler,
     AuthenticationSchemesNotFound,
     AuthenticationStrategy,

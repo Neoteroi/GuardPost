@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 from functools import lru_cache
 from typing import Any, List, Optional, Sequence, Type, Union
 
-from neoteroi.di import ContainerProtocol
+from rodi import ContainerProtocol
 
-from neoteroi.auth.abc import BaseStrategy
+from guardpost.abc import BaseStrategy
 
 
 class Identity:

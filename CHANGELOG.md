@@ -5,13 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2022-12-xx :star:
-- Renames the library to `neoteroi-auth`.
-- Adopts PEP 420 and renames the main namespace from `guardpost` to `neoteroi.auth`
+## [1.0.0] - 2023-01-07 :star:
 - Adds built-in support for dependency injection, using the new `ContainerProtocol`
-  in `neoteroi-di` (new version of `rodi`).
+  in `rodi` v2.
 - Removes the synchronous code API, maintaining only the asynchronous code API
-  for `AuthenticationStrategy.authenticate` and `AuthorizationStrategy.authorize`.
+  for `AuthenticationStrategy.authenticate` and `AuthoreoizationStrategy.authorize`.
 - Replaces `setup.py` with `pyproject.toml`.
 - Reduces imports verbosity.
 - Improves the `identity_getter` code API.

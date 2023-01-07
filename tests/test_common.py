@@ -1,17 +1,17 @@
 from typing import Any, Optional
 
 import pytest
-from neoteroi.di import Container
 from pytest import raises
+from rodi import Container
 
-from neoteroi.auth.abc import DINotConfiguredError
-from neoteroi.auth.authentication import (
+from guardpost.abc import DINotConfiguredError
+from guardpost.authentication import (
     AuthenticationHandler,
     AuthenticationStrategy,
     Identity,
 )
-from neoteroi.auth.authorization import AuthorizationStrategy, Policy, UnauthorizedError
-from neoteroi.auth.common import AnonymousPolicy, AuthenticatedRequirement
+from guardpost.authorization import AuthorizationStrategy, Policy, UnauthorizedError
+from guardpost.common import AnonymousPolicy, AuthenticatedRequirement
 
 
 @pytest.mark.asyncio
@@ -174,4 +174,4 @@ def test_container_getter_raises_for_missing_container():
 
 
 def test_import_version():
-    from neoteroi.auth.__about__ import __version__  # noqa
+    from guardpost.__about__ import __version__  # noqa

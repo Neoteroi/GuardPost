@@ -1,6 +1,6 @@
 [![Build](https://github.com/Neoteroi/guardpost/workflows/Build/badge.svg)](https://github.com/Neoteroi/guardpost/actions?query=workflow%3ABuild)
-[![pypi](https://img.shields.io/pypi/v/neoteroi-auth.svg?color=blue)](https://pypi.org/project/neoteroi-auth/)
-[![versions](https://img.shields.io/pypi/pyversions/neoteroi-auth.svg)](https://github.com/Neoteroi/guardpost)
+[![pypi](https://img.shields.io/pypi/v/guardpost.svg?color=blue)](https://pypi.org/project/guardpost/)
+[![versions](https://img.shields.io/pypi/pyversions/guardpost.svg)](https://github.com/Neoteroi/guardpost)
 [![license](https://img.shields.io/github/license/Neoteroi/guardpost.svg)](https://github.com/Neoteroi/guardpost/blob/main/LICENSE)
 [![codecov](https://codecov.io/gh/Neoteroi/guardpost/branch/main/graph/badge.svg?token=sBKZG2D1bZ)](https://codecov.io/gh/Neoteroi/guardpost)
 
@@ -23,13 +23,13 @@ although its implementation is extremely different.
 ## Installation
 
 ```bash
-pip install neoteroi-auth
+pip install guardpost
 ```
 
 To install with support for `JSON Web Tokens (JWTs)` validation:
 
 ```
-pip install neoteroi-auth[jwt]
+pip install guardpost[jwt]
 ```
 
 ### Examples
@@ -48,13 +48,12 @@ Usually, to implement authorization, is necessary to have the context of the
 entity that is executing the action.
 
 ## Usage in BlackSheep
-`neoteroi-auth` is used in the second version of the
-[BlackSheep](https://www.neoteroi.dev/blacksheep/) web framework, to implement
-[authentication and authorization
+`guardpost` is used in the [BlackSheep](https://www.neoteroi.dev/blacksheep/)
+web framework, to implement [authentication and authorization
 strategies](https://www.neoteroi.dev/blacksheep/authentication/) for request
 handlers.
 
-To see how `neoteroi-auth` is used in `blacksheep` web framework, read:
+To see how `guardpost` is used in `blacksheep` web framework, read:
 
 * [Authentication](https://www.neoteroi.dev/blacksheep/authentication/)
 * [Authorization](https://www.neoteroi.dev/blacksheep/authorization/)

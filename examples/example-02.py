@@ -4,7 +4,7 @@ one way to obtain the user's identity.
 """
 import asyncio
 
-from neoteroi.auth import AuthenticationHandler, AuthenticationStrategy, Identity
+from guardpost import AuthenticationHandler, AuthenticationStrategy, Identity
 
 
 class MyAppContext:

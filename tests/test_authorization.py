@@ -1,11 +1,11 @@
 from typing import Sequence
 
 import pytest
-from neoteroi.di import Container
 from pytest import raises
+from rodi import Container
 
-from neoteroi.auth.authentication import Identity, User
-from neoteroi.auth.authorization import (
+from guardpost.authentication import Identity, User
+from guardpost.authorization import (
     AuthorizationContext,
     AuthorizationStrategy,
     Policy,
@@ -13,7 +13,7 @@ from neoteroi.auth.authorization import (
     Requirement,
     UnauthorizedError,
 )
-from neoteroi.auth.common import AuthenticatedRequirement, ClaimsRequirement
+from guardpost.common import AuthenticatedRequirement, ClaimsRequirement
 from tests.examples import NoopRequirement
 
 

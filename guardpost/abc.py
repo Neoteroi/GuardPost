@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Iterable, List, Optional, Type, TypeVar, Union
 
-from neoteroi.di import ContainerProtocol
+from rodi import ContainerProtocol
 
 T = TypeVar("T")
 
