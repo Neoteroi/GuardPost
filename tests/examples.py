@@ -1,4 +1,4 @@
-from neoteroi.auth.authorization import AuthorizationContext, Requirement
+from guardpost.authorization import AuthorizationContext, Requirement
 
 
 class Request:

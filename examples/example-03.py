@@ -4,7 +4,7 @@ authentication handlers can be grouped by authentication schemes.
 """
 import asyncio
 
-from neoteroi.auth import AuthenticationHandler, AuthenticationStrategy, Identity
+from guardpost import AuthenticationHandler, AuthenticationStrategy, Identity
 
 
 class MyAppContext:

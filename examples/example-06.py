@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import asyncio
 
-from neoteroi.auth import (
+from guardpost import (
     AuthorizationContext,
     AuthorizationError,
     AuthorizationStrategy,
@@ -15,7 +15,7 @@ from neoteroi.auth import (
     Policy,
     Requirement,
 )
-from neoteroi.auth.common import AuthenticatedRequirement
+from guardpost.common import AuthenticatedRequirement
 
 
 class MyAppContext:

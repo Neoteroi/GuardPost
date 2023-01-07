@@ -4,7 +4,7 @@ authentication handler.
 """
 import asyncio
 
-from neoteroi.auth import AuthenticationHandler, AuthenticationStrategy, Identity
+from guardpost import AuthenticationHandler, AuthenticationStrategy, Identity
 
 
 class MyAppContext:

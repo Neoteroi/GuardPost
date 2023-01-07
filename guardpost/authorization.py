@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Type, Union
 
-from neoteroi.di import ContainerProtocol
+from rodi import ContainerProtocol
 
-from neoteroi.auth.abc import BaseStrategy
-from neoteroi.auth.authentication import Identity
+from guardpost.abc import BaseStrategy
+from guardpost.authentication import Identity
 
 
 class AuthorizationError(Exception):

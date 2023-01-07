@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import asyncio
 
-from neoteroi.auth import (
+from guardpost import (
     AuthorizationContext,
     AuthorizationError,
     AuthorizationStrategy,

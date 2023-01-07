@@ -12,7 +12,7 @@ on:
       - "*"
 
 env:
-  PROJECT_NAME: neoteroi
+  PROJECT_NAME: guardpost
 
 jobs:
   build:

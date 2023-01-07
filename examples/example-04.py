@@ -4,9 +4,9 @@ handlers.
 """
 import asyncio
 
-from neoteroi.di import Container
+from rodi import Container
 
-from neoteroi.auth import AuthenticationHandler, AuthenticationStrategy, Identity
+from guardpost import AuthenticationHandler, AuthenticationStrategy, Identity
 
 
 class MyAppContext:

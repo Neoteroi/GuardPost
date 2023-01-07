@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import asyncio
 
-from neoteroi.di import Container
+from rodi import Container
 
-from neoteroi.auth import (
+from guardpost import (
     AuthorizationContext,
     AuthorizationError,
     AuthorizationStrategy,
@@ -45,7 +45,7 @@ async def main():
 
     # NOTE: the following classes are registered as transient services - therefore
     # they are instantiated each time they are necessary.
-    # Refer to neoteroi-di documentation to know how to register singletons and scoped
+    # Refer to rodi documentation to know how to register singletons and scoped
     # services.
     container.register(Foo)
     container.register(MyInjectedRequirement)
