@@ -1,10 +1,10 @@
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Iterable
 
 import jwt
 import pytest
 
-from guardpost.jwks import InMemoryKeysProvider, KeysProvider
+from guardpost.jwks import JWKS, InMemoryKeysProvider, KeysProvider
 from guardpost.jwks.caching import CachingKeysProvider
 from guardpost.jwks.openid import AuthorityKeysProvider
 from guardpost.jwks.urls import URLKeysProvider
@@ -17,6 +17,14 @@ from .serverfixtures import BASE_URL, get_file_path, get_test_jwks
 @pytest.fixture(scope="session")
 def default_keys_provider() -> KeysProvider:
     return InMemoryKeysProvider(get_test_jwks())
+
+
+class MockedKeysProvider(KeysProvider):
+    def __init__(self, mocked: Iterable[JWKS]) -> None:
+        self.mocked = iter(mocked)
+
+    async def get_keys(self) -> JWKS:
+        return next(self.mocked)
 
 
 def get_access_token(
@@ -35,14 +43,20 @@ def get_access_token(
     )
 
 
+async def _valid_token_scenario(
+    kid: str, validator: JWTValidator, include_headers: bool = True
+):
+    payload = {"aud": "a", "iss": "b"}
+    valid_token = get_access_token(kid, payload, include_headers=include_headers)
+
+    value = await validator.validate_jwt(valid_token)
+
+    assert value == payload
+
+
 async def _valid_tokens_scenario(validator: JWTValidator, include_headers: bool = True):
     for i in range(5):
-        payload = {"aud": "a", "iss": "b"}
-        valid_token = get_access_token(str(i), payload, include_headers=include_headers)
-
-        value = await validator.validate_jwt(valid_token)
-
-        assert value == payload
+        await _valid_token_scenario(str(i), validator, include_headers)
 
 
 def test_jwt_validator_raises_for_missing_key_source():
@@ -69,6 +83,32 @@ async def test_jwt_validator_cache_expiration(default_keys_provider):
     await _valid_tokens_scenario(validator)
     time.sleep(0.2)
     await _valid_tokens_scenario(validator)
+
+
+@pytest.mark.asyncio
+async def test_jwt_validator_fetches_tokens_again_for_unknown_kid():
+    keys = get_test_jwks()
+    # configure a key provider that returns the given JWKS in sequence
+    keys_provider = MockedKeysProvider([JWKS(keys.keys[0:2]), JWKS(keys.keys[2:])])
+    validator = JWTValidator(
+        valid_audiences=["a"],
+        valid_issuers=["b"],
+        keys_provider=keys_provider,
+        cache_time=10,
+        refresh_time=0.2,
+    )
+    await _valid_token_scenario("0", validator)
+    await _valid_token_scenario("1", validator)
+
+    # this must fail because tokens were just fetched, and kid "2" is not present
+    with pytest.raises(InvalidAccessToken):
+        await _valid_token_scenario("2", validator)
+
+    time.sleep(0.3)
+    # now the JWTValidator should fetch automatically the new keys
+    await _valid_token_scenario("2", validator)
+    await _valid_token_scenario("3", validator)
+    await _valid_token_scenario("4", validator)
 
 
 @pytest.mark.asyncio

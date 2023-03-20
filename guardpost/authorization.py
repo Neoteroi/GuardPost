@@ -86,7 +86,6 @@ class UnauthorizedError(AuthorizationError):
 
 
 class AuthorizationContext:
-
     __slots__ = ("identity", "requirements", "_succeeded", "_failed_forced")
 
     def __init__(self, identity: Identity, requirements: Sequence[Requirement]):
@@ -222,7 +221,6 @@ class AuthorizationStrategy(BaseStrategy):
         with AuthorizationContext(
             identity, list(self._get_requirements(policy, scope))
         ) as context:
-
             for requirement in context.requirements:
                 if _is_async_handler(type(requirement)):  # type: ignore
                     await requirement.handle(context)

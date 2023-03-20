@@ -44,7 +44,8 @@ class JWTValidator:
         require_kid: bool = True,
         keys_provider: Optional[KeysProvider] = None,
         keys_url: Optional[str] = None,
-        cache_time: float = 10800
+        cache_time: float = 10800,
+        refresh_time: float = 120,
     ) -> None:
         """
         Creates a new instance of JWTValidator. This class only supports validating
@@ -72,9 +73,15 @@ class JWTValidator:
         keys_url : Optional[str], optional
             If provided, keys are obtained from the given URL through HTTP GET.
             This parameter is ignored if `keys_provider` is given.
-        cache_time : float, optional
-            If >= 0, JWKS are cached in memory and stored for the given amount in
-            seconds. By default 10800 (3 hours).
+        cache_time : float
+            JWKS are cached in memory and stored for the given amount in seconds.
+            By default 10800 (3 hours). Regardless of this parameter, JWKS are refreshed
+            automatically if an unknown kid is met and JWKS were last fetched more than
+            `refresh_time` earlier (in seconds).
+        refresh_time : float
+            JWKS are refreshed automatically if an unknown `kid` is encountered, and
+            JWKS were last fetched more than `refresh_time` seconds ago (by default
+            120 seconds)
         """
         if keys_provider:
             pass
@@ -89,13 +96,12 @@ class JWTValidator:
                 "`authority`, or `keys_provider`."
             )
 
-        if cache_time:
-            keys_provider = CachingKeysProvider(keys_provider, cache_time)
+        keys_provider = CachingKeysProvider(keys_provider, cache_time, refresh_time)
 
         self._valid_issuers = list(valid_issuers)
         self._valid_audiences = list(valid_audiences)
         self._algorithms = list(algorithms)
-        self._keys_provider: KeysProvider = keys_provider
+        self._keys_provider = keys_provider
         self.require_kid = require_kid
         self.logger = get_logger()
 
@@ -103,12 +109,11 @@ class JWTValidator:
         return await self._keys_provider.get_keys()
 
     async def get_jwk(self, kid: str) -> JWK:
-        jwks = await self.get_jwks()
+        key = await self._keys_provider.get_key(kid)
 
-        for jwk in jwks.keys:
-            if jwk.kid is not None and jwk.kid == kid:
-                return jwk
-        raise InvalidAccessToken("kid not recognized")
+        if key is None:
+            raise InvalidAccessToken("kid not recognized")
+        return key
 
     def _validate_jwt_by_key(
         self, access_token: str, jwk: JWK

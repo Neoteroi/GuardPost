@@ -26,10 +26,13 @@ class Identity:
 
     @property
     def sub(self) -> Optional[str]:
-        return self["sub"]
+        return self.get("sub")
 
     def is_authenticated(self) -> bool:
         return bool(self.authentication_mode)
+
+    def get(self, key: str):
+        return self.claims.get(key)
 
     def __getitem__(self, item):
         return self.claims[item]
@@ -44,15 +47,15 @@ class Identity:
 class User(Identity):
     @property
     def id(self) -> Optional[str]:
-        return self["id"] or self.sub
+        return self.get("id") or self.sub
 
     @property
     def name(self) -> Optional[str]:
-        return self["name"]
+        return self.get("name")
 
     @property
     def email(self) -> Optional[str]:
-        return self["email"]
+        return self.get("email")
 
 
 class AuthenticationHandler(ABC):
