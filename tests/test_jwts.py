@@ -95,7 +95,7 @@ async def test_jwt_validator_fetches_tokens_again_for_unknown_kid():
         valid_issuers=["b"],
         keys_provider=keys_provider,
         cache_time=10,
-        refresh_time=0.1,
+        refresh_time=0.2,
     )
     await _valid_token_scenario("0", validator)
     await _valid_token_scenario("1", validator)
@@ -104,7 +104,7 @@ async def test_jwt_validator_fetches_tokens_again_for_unknown_kid():
     with pytest.raises(InvalidAccessToken):
         await _valid_token_scenario("2", validator)
 
-    time.sleep(0.2)
+    time.sleep(0.3)
     # now the JWTValidator should fetch automatically the new keys
     await _valid_token_scenario("2", validator)
     await _valid_token_scenario("3", validator)
