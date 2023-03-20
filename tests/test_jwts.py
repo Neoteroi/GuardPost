@@ -105,7 +105,7 @@ async def test_jwt_validator_fetches_tokens_again_for_unknown_kid():
         await _valid_token_scenario("2", validator)
 
     time.sleep(0.2)
-    # now the JWTValidator should fetch automatically the new keys because refresh_time >
+    # now the JWTValidator should fetch automatically the new keys
     await _valid_token_scenario("2", validator)
     await _valid_token_scenario("3", validator)
     await _valid_token_scenario("4", validator)
