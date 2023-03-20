@@ -70,6 +70,9 @@ class JWK:
 class JWKS:
     keys: List[JWK]
 
+    def update(self, new_set: "JWKS"):
+        self.keys = list({key.kid: key for key in self.keys + new_set.keys}.values())
+
     @classmethod
     def from_dict(cls, value) -> "JWKS":
         if "keys" not in value:
