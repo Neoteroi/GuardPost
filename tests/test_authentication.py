@@ -112,7 +112,6 @@ async def test_authentication_strategy():
 
 @pytest.mark.asyncio
 async def test_strategy_throws_for_missing_context():
-
     strategy = AuthenticationStrategy()
 
     with raises(ValueError):

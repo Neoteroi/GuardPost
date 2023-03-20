@@ -147,7 +147,6 @@ def test_authorization_strategy_set_default_fluent():
 
 
 def test_unauthorized_error_supports_error_and_description():
-
     error = UnauthorizedError(
         None,
         [],
