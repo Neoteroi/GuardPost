@@ -8,6 +8,7 @@ from guardpost.authentication import Identity, User
 from guardpost.authorization import (
     AuthorizationContext,
     AuthorizationStrategy,
+    ForbiddenError,
     Policy,
     PolicyNotFoundError,
     Requirement,
@@ -162,32 +163,6 @@ class Request:
 
 def request_identity_getter(request):
     return request.user
-
-
-@pytest.mark.asyncio
-async def test_authorization_identity_getter():
-    class UserNameRequirement(Requirement):
-        def __init__(self, expected_name: str):
-            self.expected_name = expected_name
-
-        async def handle(self, context: AuthorizationContext):
-            assert context.identity is not None
-
-            if context.identity.has_claim_value("name", self.expected_name):
-                context.succeed(self)
-
-    auth = get_strategy(
-        [Policy("user", UserNameRequirement("Tybek"))], request_identity_getter
-    )
-
-    @auth(policy="user")
-    async def some_method(request: Request):
-        assert request is not None
-        return True
-
-    value = await some_method(Request(User({"name": "Tybek"})))
-
-    assert value is True
 
 
 @pytest.mark.asyncio
@@ -422,3 +397,50 @@ async def test_auth_raises_for_missing_identity_getter():
 
     with raises(TypeError, match="Missing identity getter function."):
         await some_method()
+
+
+class UserNameRequirement(Requirement):
+    def __init__(self, expected_name: str):
+        self.expected_name = expected_name
+
+    async def handle(self, context: AuthorizationContext):
+        assert context.identity is not None
+
+        if context.identity.has_claim_value("name", self.expected_name):
+            context.succeed(self)
+
+
+@pytest.mark.asyncio
+async def test_authorization_identity_getter():
+    auth = get_strategy(
+        [Policy("user", UserNameRequirement("Tybek"))], request_identity_getter
+    )
+
+    @auth(policy="user")
+    async def some_method(request: Request):
+        assert request is not None
+        return True
+
+    value = await some_method(Request(User({"name": "Tybek"})))
+
+    assert value is True
+
+
+@pytest.mark.asyncio
+async def test_authorization_identity_getter_forbidden():
+    auth = get_strategy(
+        [Policy("user", UserNameRequirement("Tybek"))], request_identity_getter
+    )
+
+    @auth(policy="user")
+    async def some_method(request: Request):
+        assert request is not None
+        return True
+
+    with pytest.raises(UnauthorizedError):
+        await some_method(
+            Request(User({"some_prop": "Example"}, authentication_mode=None))
+        )
+
+    with pytest.raises(ForbiddenError):
+        await some_method(Request(User({"name": "Foo"}, authentication_mode="cookie")))

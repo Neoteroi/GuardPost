@@ -44,6 +44,11 @@ def _is_async_handler(handler_type: Type[Requirement]) -> bool:
 
 
 class UnauthorizedError(AuthorizationError):
+    """
+    Error class used for all situations in which a user initiating an operation is not
+    authorized to complete the operation.
+    """
+
     def __init__(
         self,
         forced_failure: Optional[str],
@@ -83,6 +88,14 @@ class UnauthorizedError(AuthorizationError):
                 f"Failed requirements: {errors}."
             )
         return "Unauthorized"
+
+
+class ForbiddenError(UnauthorizedError):
+    """
+    A specific kind of authorization error, used to indicate that the application
+    understands a request but refuses to authorize it. In other words, the user context
+    is valid but the user is not authorized to perform a certain operation.
+    """
 
 
 class AuthorizationContext:
@@ -228,6 +241,10 @@ class AuthorizationStrategy(BaseStrategy):
                     requirement.handle(context)  # type: ignore
 
             if not context.has_succeeded:
+                if identity and identity.is_authenticated():
+                    raise ForbiddenError(
+                        context.forced_failure, context.pending_requirements
+                    )
                 raise UnauthorizedError(
                     context.forced_failure, context.pending_requirements
                 )
