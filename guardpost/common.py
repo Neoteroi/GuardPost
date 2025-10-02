@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Mapping as MappingType
+from typing import Mapping as MappingType, Optional
 from typing import Sequence, Union
 
 from .authorization import AuthorizationContext, Policy, Requirement
@@ -63,4 +63,35 @@ class ClaimsRequirement(Requirement):
                 context.succeed(self)
         else:
             if all(identity.has_claim(name) for name in self.required_claims):
+                context.succeed(self)
+
+
+class RolesRequirement(Requirement):
+    """
+    Requires an identity with certain roles.
+    """
+
+    __slots__ = ("_required_roles", "_sufficient_roles")
+
+    def __init__(
+        self,
+        required_roles: Optional[Sequence[str]] = None,
+        sufficient_roles: Optional[Sequence[str]] = None,
+    ):
+        self._required_roles = list(required_roles or [])
+        self._sufficient_roles = list(sufficient_roles or [])
+
+    def handle(self, context: AuthorizationContext):
+        identity = context.identity
+
+        if not identity:
+            context.fail("Missing identity")
+            return
+
+        if self._required_roles:
+            if all(identity.has_role(name) for name in self._required_roles):
+                context.succeed(self)
+
+        if self._sufficient_roles:
+            if any(identity.has_role(name) for name in self._required_roles):
                 context.succeed(self)

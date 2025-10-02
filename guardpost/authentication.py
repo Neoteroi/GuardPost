@@ -28,6 +28,10 @@ class Identity:
     def sub(self) -> Optional[str]:
         return self.get("sub")
 
+    @property
+    def roles(self) -> Optional[str]:
+        return self.get("roles")
+
     def is_authenticated(self) -> bool:
         return bool(self.authentication_mode)
 
@@ -42,6 +46,11 @@ class Identity:
 
     def has_claim_value(self, name: str, value: str) -> bool:
         return self.claims.get(name) == value
+
+    def has_role(self, name: str) -> bool:
+        if not self.roles:
+            return False
+        return name in self.roles
 
 
 class User(Identity):

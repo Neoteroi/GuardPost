@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, List, Union, Protocol
 
 import jwt
 from jwt.exceptions import InvalidIssuerError, InvalidTokenError
@@ -33,7 +33,29 @@ def get_kid(token: str) -> Optional[str]:
     return headers.get("kid")
 
 
-class JWTValidator:
+class JWTValidatorProtocol(Protocol):
+    """Protocol defining the interface for JWT validators"""
+
+    async def validate_jwt(self, access_token: str) -> Dict[str, Any]: ...
+
+
+class AbstractJWTValidator:
+    """Base class for JWT validators with common functionality"""
+
+    def __init__(
+        self,
+        *,
+        valid_issuers: Sequence[str],
+        valid_audiences: Sequence[str],
+        algorithms: Sequence[str],
+    ) -> None:
+        self._valid_issuers = list(valid_issuers)
+        self._valid_audiences = list(valid_audiences)
+        self._algorithms = list(algorithms)
+        self.logger = get_logger()
+
+
+class AsymmetricJWTValidator(AbstractJWTValidator):
     def __init__(
         self,
         *,
@@ -48,7 +70,7 @@ class JWTValidator:
         refresh_time: float = 120,
     ) -> None:
         """
-        Creates a new instance of JWTValidator. This class only supports validating
+        Creates a new instance of AsymmetricJWTValidator. This class supports validating
         access tokens signed using asymmetric keys and handling JWKs of RSA type.
 
         Parameters
@@ -83,6 +105,12 @@ class JWTValidator:
             JWKS were last fetched more than `refresh_time` seconds ago (by default
             120 seconds)
         """
+        super().__init__(
+            valid_issuers=valid_issuers,
+            valid_audiences=valid_audiences,
+            algorithms=algorithms,
+        )
+
         if keys_provider:
             pass
         elif authority:
@@ -96,14 +124,10 @@ class JWTValidator:
                 "`authority`, or `keys_provider`."
             )
 
-        keys_provider = CachingKeysProvider(keys_provider, cache_time, refresh_time)
-
-        self._valid_issuers = list(valid_issuers)
-        self._valid_audiences = list(valid_audiences)
-        self._algorithms = list(algorithms)
-        self._keys_provider = keys_provider
+        self._keys_provider = CachingKeysProvider(
+            keys_provider, cache_time, refresh_time
+        )
         self.require_kid = require_kid
-        self.logger = get_logger()
 
     async def get_jwks(self) -> JWKS:
         return await self._keys_provider.get_keys()
@@ -170,3 +194,110 @@ class JWTValidator:
                 return data
 
         raise InvalidAccessToken()
+
+
+class SymmetricJWTValidator(AbstractJWTValidator):
+    def __init__(
+        self,
+        *,
+        valid_issuers: Sequence[str],
+        valid_audiences: Sequence[str],
+        secret_key: Union[str, bytes],
+        algorithms: Sequence[str] = ["HS256"],
+    ) -> None:
+        """
+        Creates a new instance of SymmetricJWTValidator. This class supports validating
+        access tokens signed using symmetric keys (HMAC).
+
+        Parameters
+        ----------
+        valid_issuers : Sequence[str]
+            Sequence of acceptable issuers (iss).
+        valid_audiences : Sequence[str]
+            Sequence of acceptable audiences (aud).
+        secret_key : Union[str, bytes]
+            The secret key used for symmetric validation.
+        algorithms : Sequence[str], optional
+            Sequence of acceptable algorithms, by default ["HS256"].
+            Supported algorithms: HS256, HS384, HS512
+        """
+        super().__init__(
+            valid_issuers=valid_issuers,
+            valid_audiences=valid_audiences,
+            algorithms=algorithms,
+        )
+
+        supported_algorithms = ["HS256", "HS384", "HS512"]
+        for algorithm in algorithms:
+            if algorithm not in supported_algorithms:
+                raise ValueError(
+                    f"Algorithm '{algorithm}' is not supported for symmetric validation. "
+                    f"Use one of: {', '.join(supported_algorithms)}"
+                )
+
+        self._secret_key = secret_key
+
+    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+        """
+        Validates the given JWT using symmetric key and returns its payload.
+        This method throws exception if the JWT is not valid.
+        """
+        for issuer in self._valid_issuers:
+            try:
+                return jwt.decode(
+                    access_token,
+                    self._secret_key,
+                    verify=True,
+                    algorithms=self._algorithms,
+                    audience=self._valid_audiences,
+                    issuer=issuer,
+                )
+            except InvalidIssuerError:
+                # Try the next issuer
+                pass
+            except InvalidTokenError as exc:
+                self.logger.debug("Invalid access token: ", exc_info=exc)
+
+        # If we've tried all issuers and none worked
+        raise InvalidAccessToken()
+
+
+class CompositeJWTValidator(AbstractJWTValidator):
+    def __init__(self, validators: List[JWTValidatorProtocol]) -> None:
+        """
+        Creates a composite validator that tries multiple validation strategies.
+        Useful when you need to support both symmetric and asymmetric validation.
+
+        Parameters
+        ----------
+        validators : List[JWTValidatorProtocol]
+            List of validators to try in sequence
+        """
+        self._validators = validators
+        self.logger = get_logger()
+
+    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+        """
+        Attempts to validate the JWT using each validator in sequence.
+        Returns the first successful validation result or raises InvalidAccessToken
+        if all validators fail.
+        """
+        exceptions = []
+
+        for validator in self._validators:
+            try:
+                return await validator.validate_jwt(access_token)
+            except InvalidAccessToken as exc:
+                exceptions.append(exc)
+                # Continue to the next validator
+
+        # If we get here, all validators failed
+        if exceptions:
+            self.logger.debug(f"All validators failed: {exceptions}")
+        raise InvalidAccessToken(
+            "Token validation failed with all configured validators"
+        )
+
+
+# For backward compatibility, keep the original name
+JWTValidator = AsymmetricJWTValidator
