@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a `roles` property to the `Identity` object and built-in classes for
   role based authorization.
 - Add support for validating JWTs signed using symmetric encryption.
+- Add Python `3.12` and `3.13` to the build matrix.
+- Remove Python `3.8` from the build matrix.
+- Improve `pyproject.toml`.
 
 ## [1.0.2] - 2023-06-16 :corn:
 

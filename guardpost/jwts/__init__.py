@@ -39,8 +39,8 @@ class JWTValidatorProtocol(Protocol):
     async def validate_jwt(self, access_token: str) -> Dict[str, Any]: ...
 
 
-class AbstractJWTValidator:
-    """Base class for JWT validators with common functionality"""
+class BaseJWTValidator:
+    """Base class for JWT validators with common functionality."""
 
     def __init__(
         self,
@@ -55,7 +55,11 @@ class AbstractJWTValidator:
         self.logger = get_logger()
 
 
-class AsymmetricJWTValidator(AbstractJWTValidator):
+class AsymmetricJWTValidator(BaseJWTValidator):
+    """
+    A JWTValidator that can validate JWTs signed using asymmetric encryption.
+    """
+
     def __init__(
         self,
         *,
@@ -196,7 +200,7 @@ class AsymmetricJWTValidator(AbstractJWTValidator):
         raise InvalidAccessToken()
 
 
-class SymmetricJWTValidator(AbstractJWTValidator):
+class SymmetricJWTValidator(BaseJWTValidator):
     def __init__(
         self,
         *,
@@ -262,7 +266,7 @@ class SymmetricJWTValidator(AbstractJWTValidator):
         raise InvalidAccessToken()
 
 
-class CompositeJWTValidator(AbstractJWTValidator):
+class CompositeJWTValidator(BaseJWTValidator):
     def __init__(self, validators: List[JWTValidatorProtocol]) -> None:
         """
         Creates a composite validator that tries multiple validation strategies.
