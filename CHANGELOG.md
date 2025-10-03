@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.3] - 2025-10-02
+## [1.0.3] - 2025-10-03
 
-- Add a `roles` property to the `Identity` object and built-in classes for
-  role based authorization.
-- Add support for validating JWTs signed using symmetric encryption.
+- Add a `roles` property to the `Identity` object and a `RolesRequirement`
+  class to require roles.
+- Add support for validating JWTs signed using symmetric encryption
+  (`SymmetricJWTValidator` and `AsymmetricJWTValidator`).
+- Add support to call the `authorize` method with an optional set of roles,
+  treated as sufficient roles to succeed authorization.
 
 ## [1.0.2] - 2023-06-16 :corn:
 

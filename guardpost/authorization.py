@@ -7,6 +7,7 @@ from rodi import ContainerProtocol
 
 from guardpost.abc import BaseStrategy
 from guardpost.authentication import Identity
+from guardpost.common import RolesRequirement
 
 
 class AuthorizationError(Exception):
@@ -208,7 +209,11 @@ class AuthorizationStrategy(BaseStrategy):
         return self
 
     async def authorize(
-        self, policy_name: Optional[str], identity: Identity, scope: Any = None
+        self,
+        policy_name: Optional[str],
+        identity: Identity,
+        scope: Any = None,
+        roles: Optional[Sequence[str]] = None,
     ):
         if policy_name:
             policy = self.get_policy(policy_name)
@@ -216,10 +221,18 @@ class AuthorizationStrategy(BaseStrategy):
             if not policy:
                 raise PolicyNotFoundError(policy_name)
 
-            await self._handle_with_policy(policy, identity, scope)
+            await self._handle_with_policy(policy, identity, scope, roles)
         else:
             if self.default_policy:
-                await self._handle_with_policy(self.default_policy, identity, scope)
+                await self._handle_with_policy(
+                    self.default_policy, identity, scope, roles
+                )
+                return
+
+            if roles:
+                # This code is only executed if the user specified roles without
+                # specifying an authorization policy.
+                await self._handle_with_roles(identity, roles)
                 return
 
             if not identity:
@@ -227,27 +240,47 @@ class AuthorizationStrategy(BaseStrategy):
             if not identity.is_authenticated():
                 raise UnauthorizedError("The resource requires authentication", [])
 
-    def _get_requirements(self, policy: Policy, scope: Any) -> Iterable[Requirement]:
+    def _get_requirements(
+        self, policy: Policy, scope: Any, roles: Optional[Sequence[str]] = None
+    ) -> Iterable[Requirement]:
+        if roles:
+            yield RolesRequirement(roles=roles)
         yield from self._get_instances(policy.requirements, scope)
 
-    async def _handle_with_policy(self, policy: Policy, identity: Identity, scope: Any):
+    async def _handle_with_policy(
+        self,
+        policy: Policy,
+        identity: Identity,
+        scope: Any,
+        roles: Optional[Sequence[str]] = None,
+    ):
         with AuthorizationContext(
-            identity, list(self._get_requirements(policy, scope))
+            identity, list(self._get_requirements(policy, scope, roles))
         ) as context:
-            for requirement in context.requirements:
-                if _is_async_handler(type(requirement)):  # type: ignore
-                    await requirement.handle(context)
-                else:
-                    requirement.handle(context)  # type: ignore
+            await self._handle_context(identity, context)
 
-            if not context.has_succeeded:
-                if identity and identity.is_authenticated():
-                    raise ForbiddenError(
-                        context.forced_failure, context.pending_requirements
-                    )
-                raise UnauthorizedError(
+    async def _handle_with_roles(
+        self, identity: Identity, roles: Optional[Sequence[str]] = None
+    ):
+        # This method is to be used only when the user specified roles without a policy
+        with AuthorizationContext(identity, [RolesRequirement(roles=roles)]) as context:
+            await self._handle_context(identity, context)
+
+    async def _handle_context(self, identity: Identity, context: AuthorizationContext):
+        for requirement in context.requirements:
+            if _is_async_handler(type(requirement)):  # type: ignore
+                await requirement.handle(context)
+            else:
+                requirement.handle(context)  # type: ignore
+
+        if not context.has_succeeded:
+            if identity and identity.is_authenticated():
+                raise ForbiddenError(
                     context.forced_failure, context.pending_requirements
                 )
+            raise UnauthorizedError(
+                context.forced_failure, context.pending_requirements
+            )
 
     async def _handle_with_identity_getter(
         self, policy_name: Optional[str], *args, **kwargs

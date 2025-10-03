@@ -69,17 +69,19 @@ class ClaimsRequirement(Requirement):
 class RolesRequirement(Requirement):
     """
     Requires an identity with certain roles.
+    Supports defining sufficient roles (any one is enough), and required roles (all
+    must be present).
     """
 
-    __slots__ = ("_required_roles", "_sufficient_roles")
+    __slots__ = ("_roles", "_required_roles")
 
     def __init__(
         self,
+        roles: Optional[Sequence[str]] = None,
         required_roles: Optional[Sequence[str]] = None,
-        sufficient_roles: Optional[Sequence[str]] = None,
     ):
-        self._required_roles = list(required_roles or [])
-        self._sufficient_roles = list(sufficient_roles or [])
+        self._required_roles = list(required_roles) if required_roles else None
+        self._roles = list(roles) if roles else None
 
     def handle(self, context: AuthorizationContext):
         identity = context.identity
@@ -88,10 +90,10 @@ class RolesRequirement(Requirement):
             context.fail("Missing identity")
             return
 
-        if self._required_roles:
-            if all(identity.has_role(name) for name in self._required_roles):
+        if self._roles:
+            if any(identity.has_role(name) for name in self._roles):
                 context.succeed(self)
 
-        if self._sufficient_roles:
-            if any(identity.has_role(name) for name in self._required_roles):
+        if self._required_roles:
+            if all(identity.has_role(name) for name in self._required_roles):
                 context.succeed(self)
