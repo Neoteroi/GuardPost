@@ -5,53 +5,36 @@ build-backend = "hatchling.build"
 [project]
 name = "guardpost"
 dynamic = ["version"]
-authors = [
-    { name = "Roberto Prevato", email = "roberto.prevato@gmail.com" },
-]
+authors = [{ name = "Roberto Prevato", email = "roberto.prevato@gmail.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
 description = "Framework to handle authentication and authorization."
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Operating System :: OS Independent",
+  "Development Status :: 5 - Production/Stable",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
 ]
 keywords = ["authentication", "authorization", "identity", "claims", "strategy"]
-dependencies = [
-    "rodi>=2.0.0",
-    "typing_extensions; python_version < '3.8'",
-]
+dependencies = ["rodi>=2.0.0", "typing_extensions; python_version < '3.8'"]
 
 [project.optional-dependencies]
-jwt = [
-  "PyJWT",
-  "cryptography",
-]
+jwt = ["PyJWT", "cryptography"]
 
 [tool.hatch.build.targets.sdist]
-exclude = [
-  "/.github",
-  "/docs",
-  "/examples",
-  "/deps",
-  "/styles",
-  "/tests",
-  "mkdocs-plugins.code-workspace",
-  "Makefile",
-  "CODE_OF_CONDUCT.md",
-  ".isort.cfg",
-  ".gitignore",
-  ".flake8",
-  "junit",
-  "guardpost.code-workspace",
-  "requirements.txt",
-  "examples-summary.py"
+include = [
+  "guardpost/",
+  "README.md",
+  "LICENSE*",
+  "CHANGELOG*",
+  "pyproject.toml",
 ]
 
 [tool.hatch.version]

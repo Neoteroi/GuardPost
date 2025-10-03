@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`SymmetricJWTValidator` and `AsymmetricJWTValidator`).
 - Add support to call the `authorize` method with an optional set of roles,
   treated as sufficient roles to succeed authorization.
+- Add Python `3.12` and `3.13` to the build matrix.
+- Remove Python `3.8` from the build matrix.
+- Improve `pyproject.toml`.
 
 ## [1.0.2] - 2023-06-16 :corn:
 
