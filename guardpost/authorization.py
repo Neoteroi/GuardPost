@@ -7,7 +7,6 @@ from rodi import ContainerProtocol
 
 from guardpost.abc import BaseStrategy
 from guardpost.authentication import Identity
-from guardpost.common import RolesRequirement
 
 
 class AuthorizationError(Exception):
@@ -32,6 +31,29 @@ class Requirement(ABC):
     @abstractmethod
     async def handle(self, context: "AuthorizationContext"):
         """Handles this requirement for a given context."""
+
+
+class RolesRequirement(Requirement):
+    """
+    Requires an identity with certain roles.
+    Supports defining sufficient roles (any one is enough).
+    """
+
+    __slots__ = ("_roles",)
+
+    def __init__(self, roles: Optional[Sequence[str]] = None):
+        self._roles = list(roles) if roles else None
+
+    def handle(self, context: "AuthorizationContext"):
+        identity = context.identity
+
+        if not identity:
+            context.fail("Missing identity")
+            return
+
+        if self._roles:
+            if any(identity.has_role(name) for name in self._roles):
+                context.succeed(self)
 
 
 RequirementConfType = Union[Requirement, Type[Requirement]]
