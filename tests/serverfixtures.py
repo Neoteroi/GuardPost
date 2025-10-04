@@ -1,9 +1,9 @@
 import json
 import os
+from importlib.resources import files
 from multiprocessing import Process
 from time import sleep
 
-from importlib.resources import files
 import pytest
 from flask import Flask
 

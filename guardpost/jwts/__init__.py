@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional, Sequence, List, Union, Protocol
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Protocol, Sequence, Union
 
 import jwt
 from jwt.exceptions import InvalidIssuerError, InvalidTokenError
@@ -36,10 +37,14 @@ def get_kid(token: str) -> Optional[str]:
 class JWTValidatorProtocol(Protocol):
     """Protocol defining the interface for JWT validators"""
 
-    async def validate_jwt(self, access_token: str) -> Dict[str, Any]: ...
+    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+        """
+        Validates an access token and returns its claims.
+        """
+        ...
 
 
-class BaseJWTValidator:
+class BaseJWTValidator(ABC):
     """Base class for JWT validators with common functionality."""
 
     def __init__(
@@ -53,6 +58,12 @@ class BaseJWTValidator:
         self._valid_audiences = list(valid_audiences)
         self._algorithms = list(algorithms)
         self.logger = get_logger()
+
+    @abstractmethod
+    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+        """
+        Validates an access token and returns its claims.
+        """
 
 
 class AsymmetricJWTValidator(BaseJWTValidator):
@@ -235,8 +246,8 @@ class SymmetricJWTValidator(BaseJWTValidator):
         for algorithm in algorithms:
             if algorithm not in supported_algorithms:
                 raise ValueError(
-                    f"Algorithm '{algorithm}' is not supported for symmetric validation. "
-                    f"Use one of: {', '.join(supported_algorithms)}"
+                    f"Algorithm '{algorithm}' is not supported for symmetric "
+                    f"validation. Use one of: {', '.join(supported_algorithms)}."
                 )
 
         self._secret_key = secret_key
