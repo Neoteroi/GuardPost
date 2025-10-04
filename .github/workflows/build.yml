@@ -23,7 +23,7 @@ jobs:
         python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 9
           submodules: false
@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: actions/cache@v1
+      - uses: actions/cache@v4
         id: depcache
         with:
           path: deps
@@ -69,7 +69,7 @@ jobs:
           for f in ./examples/*.py; do echo "Processing $f file..." && python $f; done
 
       - name: Upload pytest test results
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v4
         with:
           name: pytest-results-${{ matrix.python-version }}
           path: junit/pytest-results-${{ matrix.python-version }}.xml
@@ -88,7 +88,7 @@ jobs:
         if: matrix.python-version == 3.12
 
       - name: Upload distribution package
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist
@@ -100,13 +100,13 @@ jobs:
     if: github.event_name == 'release'
     steps:
       - name: Download a distribution artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
 
       - name: Use Python 3.12
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: "3.12"
 

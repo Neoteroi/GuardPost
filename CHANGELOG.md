@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.3] - 2025-10-04 :trident:
 
-- Add a `roles` property to the `Identity` object and a `RolesRequirement`
-  class to authorize by **sufficient roles** (any one is enough).
+- Add a `roles` property to the `Identity` object.
+- Add a `RolesRequirement` class to authorize by **sufficient roles**
+  (any one is enough).
 - Add support for validating JWTs signed using symmetric encryption
   (`SymmetricJWTValidator` and `AsymmetricJWTValidator`).
 - Add support to call the `authorize` method with an optional set of roles,
@@ -16,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Python `3.12` and `3.13` to the build matrix.
 - Remove Python `3.8` from the build matrix.
 - Improve `pyproject.toml`.
+- Workflow maintenance.
 
 ## [1.0.2] - 2023-06-16 :corn:
 
