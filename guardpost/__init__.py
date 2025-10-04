@@ -15,6 +15,7 @@ from .authorization import (
     PolicyNotFoundError,
     Requirement,
     RequirementConfType,
+    RolesRequirement,
     UnauthorizedError,
 )
 
@@ -32,6 +33,7 @@ __all__ = [
     "PolicyNotFoundError",
     "Requirement",
     "RequirementConfType",
+    "RolesRequirement",
     "UnauthorizedError",
     "AuthorizationContext",
 ]
