@@ -1,9 +1,9 @@
 import json
 import os
+from importlib.resources import files
 from multiprocessing import Process
 from time import sleep
 
-import pkg_resources
 import pytest
 from flask import Flask
 
@@ -17,7 +17,7 @@ app = Flask(__name__, static_url_path="", static_folder="res")
 
 
 def get_file_path(file_name, folder_name: str = "res") -> str:
-    return pkg_resources.resource_filename(__name__, f"./{folder_name}/{file_name}")
+    return str(files(__package__) / folder_name / file_name)
 
 
 def get_test_jwks_dict():

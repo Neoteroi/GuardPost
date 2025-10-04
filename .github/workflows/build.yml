@@ -20,10 +20,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 9
           submodules: false
@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: actions/cache@v1
+      - uses: actions/cache@v4
         id: depcache
         with:
           path: deps
@@ -69,7 +69,7 @@ jobs:
           for f in ./examples/*.py; do echo "Processing $f file..." && python $f; done
 
       - name: Upload pytest test results
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v4
         with:
           name: pytest-results-${{ matrix.python-version }}
           path: junit/pytest-results-${{ matrix.python-version }}.xml
@@ -81,18 +81,18 @@ jobs:
 
       - name: Install distribution dependencies
         run: pip install --upgrade build
-        if: matrix.python-version == 3.10
+        if: matrix.python-version == 3.12
 
       - name: Create distribution package
         run: python -m build
-        if: matrix.python-version == 3.10
+        if: matrix.python-version == 3.12
 
       - name: Upload distribution package
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist
-        if: matrix.python-version == 3.10
+        if: matrix.python-version == 3.12
 
   publish:
     runs-on: ubuntu-latest
@@ -100,15 +100,15 @@ jobs:
     if: github.event_name == 'release'
     steps:
       - name: Download a distribution artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
 
-      - name: Use Python 3.11
-        uses: actions/setup-python@v1
+      - name: Use Python 3.12
+        uses: actions/setup-python@v3
         with:
-          python-version: '3.11'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
