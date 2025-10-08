@@ -79,7 +79,7 @@ class InMemoryAuthenticationAttemptsStore(AuthenticationAttemptsStore):
 
 class RateLimiter:
     """
-    This class provides brute force protection by limiting the number of login attempts.
+    This class provides brute force protection by limiting the number of login attempts
     from a single IP address within a specific time frame. After a certain number of
     attempts, the IP address can be temporarily blocked.
     """
