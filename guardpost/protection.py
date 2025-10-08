@@ -41,12 +41,16 @@ class FailedAttempts:
         """
         return (datetime.now(UTC) - self._last_attempt_time).total_seconds()
 
-    def __iadd__(self):
-        self._counter += 1
-        self._last_attempt_time = datetime.now(tz=UTC)
-
 
 class AuthenticationAttemptsStore(ABC):
+    """
+    Abstract base class for storing authentication attempts.
+
+    Implementations of this class provide mechanisms to persist and manage failed
+    authentication attempts, which can be used for rate limiting and brute-force
+    protection. Subclasses must implement methods to retrieve, store, and clear
+    failed attempts for a given key.
+    """
 
     @abstractmethod
     async def get_failed_attempts(self, key: str) -> Optional[FailedAttempts]: ...
@@ -59,14 +63,25 @@ class AuthenticationAttemptsStore(ABC):
 
 
 class InMemoryAuthenticationAttemptsStore(AuthenticationAttemptsStore):
+    """
+    In-memory implementation of the AuthenticationAttemptsStore interface.
+
+    This class stores authentication attempts in a dictionary that exists only for the
+    lifetime of the application. All data is lost when the application restarts.
+
+    This implementation is suitable for development, testing, or scenarios where
+    persistence across application restarts is not required. For production environments
+    it can be a 'good enough' default protection to store failed login attempts
+    in-memory for each instance of the production app.
+    """
 
     def __init__(self) -> None:
         super().__init__()
         self._attempts = {}
 
-    async def get_failed_attempts(self, client_ip: str) -> Optional[FailedAttempts]:
+    async def get_failed_attempts(self, key: str) -> Optional[FailedAttempts]:
         try:
-            return self._attempts[client_ip]
+            return self._attempts[key]
         except KeyError:
             return None
 
@@ -80,8 +95,8 @@ class InMemoryAuthenticationAttemptsStore(AuthenticationAttemptsStore):
 class RateLimiter:
     """
     This class provides brute force protection by limiting the number of login attempts
-    from a single IP address within a specific time frame. After a certain number of
-    attempts, the IP address can be temporarily blocked.
+    by arbitrary key (e.g. client ip address) within a specific time frame. After a
+    certain number of attempts, the key can be temporarily blocked.
     """
 
     def __init__(
@@ -89,26 +104,28 @@ class RateLimiter:
         threshold: int = 3,
         block_time: int = 300,
         store: Optional[AuthenticationAttemptsStore] = None,
-        trusted_ips: Optional[Sequence[str]] = None,
+        trusted_keys: Optional[Sequence[str]] = None,
     ) -> None:
         self._threshold = int(threshold)
         self._block_time = int(block_time)
-        self._trusted_ips = set(trusted_ips) if trusted_ips else None
+        self._trusted_keys = set(trusted_keys) if trusted_keys else None
         self._store = store or InMemoryAuthenticationAttemptsStore()
 
-    async def is_valid_context(self, client_ip: str) -> bool:
+    async def allow_authentication_attempt(self, key: str) -> bool:
         """
-        Verifies if the given context should be rate limited.
+        Determines if an authentication attempt should be allowed based on rate limiting
+        rules. Returns True if the attempt should proceed, False if it should be
+        blocked.
         """
-        if self._trusted_ips and client_ip in self._trusted_ips:
+        if self._trusted_keys and key in self._trusted_keys:
             return True
 
-        failed_attempt = await self._store.get_failed_attempts(client_ip)
+        failed_attempt = await self._store.get_failed_attempts(key)
         if failed_attempt is None:
             return True
 
         if failed_attempt.get_age() >= self._block_time:
-            await self._store.clear_attempts(client_ip)
+            await self._store.clear_attempts(key)
             return True
 
         if failed_attempt.counter >= self._threshold:

@@ -29,3 +29,7 @@ class InvalidCredentialsError(AuthException):
     @property
     def key(self) -> str:
         return self._key
+
+    @key.setter
+    def key(self, value: str):
+        self._key = value
