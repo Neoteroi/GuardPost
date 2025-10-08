@@ -10,11 +10,15 @@ from guardpost.authentication import Identity
 
 
 class AuthorizationError(Exception):
-    pass
+    """
+    Base class for all kinds of AuthorizationErrors.
+    """
 
 
 class AuthorizationConfigurationError(Exception):
-    pass
+    """
+    Exception to describe errors in user-defined authorization configuration.
+    """
 
 
 class PolicyNotFoundError(AuthorizationConfigurationError, RuntimeError):

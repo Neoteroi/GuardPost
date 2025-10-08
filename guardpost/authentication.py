@@ -1,11 +1,14 @@
 import inspect
+import logging
 from abc import ABC, abstractmethod
 from functools import lru_cache
+from logging import Logger
 from typing import Any, List, Optional, Sequence, Type, Union
 
 from rodi import ContainerProtocol
 
 from guardpost.abc import BaseStrategy
+from guardpost.protection import InvalidCredentialsError, RateLimiter
 
 
 class Identity:
@@ -108,9 +111,13 @@ class AuthenticationStrategy(BaseStrategy):
         self,
         *handlers: AuthenticationHandlerConfType,
         container: Optional[ContainerProtocol] = None,
+        rate_limiter: Optional[RateLimiter] = None,
+        logger: Optional[Logger] = None,
     ):
         super().__init__(container)
         self.handlers = list(handlers)
+        self._rate_limiter = rate_limiter or RateLimiter()
+        self._logger = logger or logging.getLogger("guardpost")
 
     def add(self, handler: AuthenticationHandlerConfType) -> "AuthenticationStrategy":
         self.handlers.append(handler)
@@ -156,11 +163,29 @@ class AuthenticationStrategy(BaseStrategy):
         if not context:
             raise ValueError("Missing context to evaluate authentication")
 
+        # TODO: how to apply rate limiting by username and client_ip here?
+        # We should probably lock a user account from a certain IP and user account
+        # combination and not from any IP in general???
+        # Maybe this should be checked for each authentication handler?
+        valid_context = await self._rate_limiter.is_valid_context(context)
+
+        if not valid_context:
+            # TODO: raise specific exception?
+            return None
+
         for handler in self._get_handlers_by_schemes(authentication_schemes, context):
-            if _is_async_handler(type(handler)):
-                identity = await handler.authenticate(context)  # type: ignore
-            else:
-                identity = handler.authenticate(context)
+
+            try:
+                identity = await self._authenticate_with_handler(handler, context)
+            except InvalidCredentialsError as invalid_credentials_error:
+                # A client provided credentials of a given type, and they were invalid.
+                # Store the information, so later we can verify.
+                self._logger.info(
+                    "Invalid credentials received from client IP %s for scheme: %s",
+                    invalid_credentials_error.client_ip,
+                    handler.scheme,
+                )
+                await self._rate_limiter.store_failure(invalid_credentials_error)
 
             if identity:
                 try:
@@ -169,3 +194,9 @@ class AuthenticationStrategy(BaseStrategy):
                     pass
                 return identity
         return None
+
+    async def _authenticate_with_handler(self, handler: AuthenticationHandler, context):
+        if _is_async_handler(type(handler)):
+            return await handler.authenticate(context)  # type: ignore
+        else:
+            return handler.authenticate(context)
