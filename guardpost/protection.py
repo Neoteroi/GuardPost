@@ -156,7 +156,10 @@ class RateLimiter:
 
         return True
 
-    async def store_failure(self, error: InvalidCredentialsError):
+    async def store_authentication_failure(self, error: InvalidCredentialsError):
+        """
+        Tracks information about a failed authentication attempt.
+        """
         failed_attempt = await self._store.get_failed_attempts(error.key)
         if failed_attempt is None:
             failed_attempt = FailedAuthenticationAttempts(error.key)

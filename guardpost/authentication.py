@@ -173,7 +173,7 @@ class RateLimitingAuthenticationHandler(AuthenticationHandler):
 
             # Ensure the error has the right key for rate limiting
             error.key = key  # Make sure InvalidCredentialsError has a key attribute
-            await self._rate_limiter.store_failure(error)
+            await self._rate_limiter.store_authentication_failure(error)
 
             # Do not raise, as next authentication handlers might succeed
 
@@ -235,10 +235,6 @@ class AuthenticationStrategy(BaseStrategy):
         if not context:
             raise ValueError("Missing context to evaluate authentication")
 
-        # TODO: how to apply rate limiting by username and client_ip here?
-        # We should probably lock a user account from a certain IP and user account
-        # combination and not from any IP in general???
-        # Maybe this should be checked for each authentication handler?
         valid_context = await self._rate_limiter.allow_authentication_attempt(context)
 
         if not valid_context:
@@ -257,7 +253,9 @@ class AuthenticationStrategy(BaseStrategy):
                     invalid_credentials_error.client_ip,
                     handler.scheme,
                 )
-                await self._rate_limiter.store_failure(invalid_credentials_error)
+                await self._rate_limiter.store_authentication_failure(
+                    invalid_credentials_error
+                )
 
             if identity:
                 try:
