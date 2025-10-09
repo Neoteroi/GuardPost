@@ -4,7 +4,7 @@ This module provides classes to protect against brute-force attacks.
 
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
-from typing import Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 from guardpost.errors import InvalidCredentialsError
 
@@ -12,8 +12,7 @@ from guardpost.errors import InvalidCredentialsError
 class FailedAuthenticationAttempts:
     """
     A record class that stores the count of failed authentication attempts for an
-    arbitrary key (e.g. client IP, or username and client IP), and the time of the last
-    failed attempt.
+    arbitrary key (e.g. client IP), and the time of the last failed attempt.
     """
 
     __slots__ = ("_key", "_counter", "_last_attempt_time")
@@ -128,18 +127,27 @@ class RateLimiter:
         block_time: int = 300,
         store: Optional[AuthenticationAttemptsStore] = None,
         trusted_keys: Optional[Sequence[str]] = None,
+        key_extractor: Optional[Callable[[Any], str]] = None,
     ) -> None:
         self._threshold = int(threshold)
         self._block_time = int(block_time)
         self._trusted_keys = set(trusted_keys) if trusted_keys else None
         self._store = store or InMemoryAuthenticationAttemptsStore()
+        self._key_extractor = key_extractor
 
-    async def allow_authentication_attempt(self, key: str) -> bool:
+    def get_context_key(self, context: Any) -> str:
+        if self._key_extractor:
+            return self._key_extractor(context)
+        return context.client_ip
+
+    async def allow_authentication_attempt(self, context: Any) -> bool:
         """
         Determines if an authentication attempt should be allowed based on rate limiting
         rules. Returns True if the attempt should proceed, False if it should be
         blocked.
         """
+        key = self.get_context_key(context)
+
         if self._trusted_keys and key in self._trusted_keys:
             return True
 

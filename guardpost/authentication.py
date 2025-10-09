@@ -3,11 +3,12 @@ import logging
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from logging import Logger
-from typing import Any, Callable, List, Optional, Sequence, Type, Union
+from typing import Any, List, Optional, Sequence, Type, Union
 
 from rodi import ContainerProtocol
 
 from guardpost.abc import BaseStrategy
+from guardpost.errors import TooManyAuthenticationAttemptsError
 from guardpost.protection import InvalidCredentialsError, RateLimiter
 
 
@@ -106,78 +107,6 @@ class AuthenticationSchemesNotFound(ValueError):
         )
 
 
-class RateLimitingAuthenticationHandler(AuthenticationHandler):
-    """
-    An authentication handler that wraps another handler and applies rate limiting
-    before delegating authentication.
-    """
-
-    def __init__(
-        self,
-        handler: AuthenticationHandler,
-        rate_limiter: Optional[RateLimiter] = None,
-        key_extractor: Optional[Callable[[Any], str]] = None,
-        logger: Optional[Logger] = None,
-    ):
-        self._inner_handler = handler
-        self._rate_limiter = rate_limiter or RateLimiter()
-        self._key_extractor = key_extractor or self.default_key_extractor
-        self._logger = logger or logging.getLogger("guardpost")
-
-    @property
-    def scheme(self) -> str:
-        """Returns the name of the inner authentication handler's scheme."""
-        return self._inner_handler.scheme
-
-    @property
-    def inner_handler(self) -> AuthenticationHandler:
-        """Returns the inner authentication handler."""
-        return self._inner_handler
-
-    def default_key_extractor(self, context: Any) -> str:
-        """
-        Extract a key for rate limiting from the context.
-        By default, it tries to read the `client_ip` attribute from the context.
-        """
-        try:
-            return context.client_ip
-        except AttributeError as ae:
-            raise TypeError(
-                "Cannot read 'client_ip' from the authentication context. "
-                "Specify a key_extractor for your context to resolve this issue."
-            ) from ae
-
-    async def authenticate(self, context: Any) -> Optional[Identity]:  # type: ignore
-        """Applies rate limiting then delegates to the inner handler."""
-        key = self._key_extractor(context)
-
-        # Check if this context is allowed to authenticate
-        valid_context = await self._rate_limiter.allow_authentication_attempt(key)
-        if not valid_context:
-            return None
-
-        try:
-            # Delegate to the actual handler
-            if _is_async_handler(type(self._inner_handler)):
-                return await self._inner_handler.authenticate(context)  # type: ignore
-            else:
-                return self._inner_handler.authenticate(context)
-
-        except InvalidCredentialsError as error:
-            # Store the failure information
-            self._logger.info(
-                "Invalid credentials received for key %s using scheme: %s",
-                key,
-                self.scheme,
-            )
-
-            # Ensure the error has the right key for rate limiting
-            error.key = key  # Make sure InvalidCredentialsError has a key attribute
-            await self._rate_limiter.store_authentication_failure(error)
-
-            # Do not raise, as next authentication handlers might succeed
-
-
 class AuthenticationStrategy(BaseStrategy):
     def __init__(
         self,
@@ -238,8 +167,7 @@ class AuthenticationStrategy(BaseStrategy):
         valid_context = await self._rate_limiter.allow_authentication_attempt(context)
 
         if not valid_context:
-            # TODO: raise specific exception?
-            return None
+            raise TooManyAuthenticationAttemptsError()
 
         identity = None
         for handler in self._get_handlers_by_schemes(authentication_schemes, context):
@@ -264,29 +192,6 @@ class AuthenticationStrategy(BaseStrategy):
                     pass
                 return identity
         return None
-
-    def apply_rate_limiting(
-        self,
-        schemes: Optional[List[str]] = None,
-        rate_limiter: Optional[RateLimiter] = None,
-        key_extractor: Optional[Callable[[Any], str]] = None,
-    ) -> None:
-        """Applies rate limiting to all handlers or specific handlers."""
-        limiter = rate_limiter or self._rate_limiter
-
-        # Get handlers to apply rate limiting to
-        handlers_to_wrap = []
-        if schemes:
-            handlers_to_wrap = [h for h in self.handlers if h.scheme in schemes]
-        else:
-            handlers_to_wrap = self.handlers.copy()
-
-        # Replace handlers with rate-limited versions
-        for i, handler in enumerate(self.handlers):
-            if handler in handlers_to_wrap:
-                self.handlers[i] = RateLimitingAuthenticationHandler(
-                    handler, rate_limiter=limiter, key_extractor=key_extractor
-                )
 
     async def _authenticate_with_handler(self, handler: AuthenticationHandler, context):
         if _is_async_handler(type(handler)):

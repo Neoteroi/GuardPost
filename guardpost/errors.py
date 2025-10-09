@@ -1,5 +1,5 @@
 class AuthException(Exception):
-    """Base class for exceptions related to the library itself."""
+    """Base class for exceptions raised by GuardPost."""
 
 
 class UnsupportedFeatureError(AuthException):
@@ -9,8 +9,8 @@ class UnsupportedFeatureError(AuthException):
 class InvalidCredentialsError(AuthException):
     """
     Exception to be raised when invalid credentials are provided. The purpose of this
-    class is to be handled to implement rate limiting and provide protection against
-    brute-force attacks.
+    class is to implement rate limiting and provide protection against brute-force
+    attacks.
     """
 
     def __init__(self, client_ip: str, key: str = "") -> None:
@@ -33,3 +33,12 @@ class InvalidCredentialsError(AuthException):
     @key.setter
     def key(self, value: str):
         self._key = value
+
+
+class TooManyAuthenticationAttemptsError(Exception):
+
+    def __init__(self) -> None:
+        super().__init__(
+            "The caller failed too many authentication attempts and authentication has "
+            "been rate limited. Try again later."
+        )

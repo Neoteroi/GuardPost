@@ -10,12 +10,14 @@ from ..jwks.openid import AuthorityKeysProvider
 from ..jwks.urls import URLKeysProvider
 from ..utils import get_logger
 
+from guardpost.errors import AuthException
 
-class OAuthException(Exception):
+
+class OAuthException(AuthException):
     """Base class for exception risen when there is an issue related to OAuth."""
 
 
-class InvalidAccessToken(Exception):
+class InvalidAccessToken(AuthException):
     def __init__(self, details=""):
         if details:
             message = "Invalid access token: " + details

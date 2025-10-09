@@ -7,15 +7,16 @@ from rodi import ContainerProtocol
 
 from guardpost.abc import BaseStrategy
 from guardpost.authentication import Identity
+from guardpost.errors import AuthException
 
 
-class AuthorizationError(Exception):
+class AuthorizationError(AuthException):
     """
     Base class for all kinds of AuthorizationErrors.
     """
 
 
-class AuthorizationConfigurationError(Exception):
+class AuthorizationConfigurationError(AuthException):
     """
     Exception to describe errors in user-defined authorization configuration.
     """

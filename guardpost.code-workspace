@@ -21,7 +21,10 @@
             "editor.rulers": [
                 88,
                 100
-            ]
-        }
+            ],
+            "editor.defaultFormatter": "ms-python.black-formatter"
+        },
+        "python.formatting.provider": "none",
+        "makefile.configureOnOpen": false
     }
 }

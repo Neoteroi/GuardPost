@@ -17,9 +17,22 @@ from .authorization import (
     RequirementConfType,
     RolesRequirement,
     UnauthorizedError,
+    ForbiddenError,
+)
+from .protection import (
+    AuthenticationAttemptsStore,
+    FailedAuthenticationAttempts,
+    InMemoryAuthenticationAttemptsStore,
+    RateLimiter,
+)
+from .errors import (
+    AuthException,
+    InvalidCredentialsError,
+    TooManyAuthenticationAttemptsError,
 )
 
 __all__ = [
+    "AuthException",
     "AuthenticationHandlerConfType",
     "AuthenticationSchemesNotFound",
     "AuthorizationConfigurationError",
@@ -35,5 +48,12 @@ __all__ = [
     "RequirementConfType",
     "RolesRequirement",
     "UnauthorizedError",
+    "ForbiddenError",
     "AuthorizationContext",
+    "RateLimiter",
+    "AuthenticationAttemptsStore",
+    "InMemoryAuthenticationAttemptsStore",
+    "FailedAuthenticationAttempts",
+    "InvalidCredentialsError",
+    "TooManyAuthenticationAttemptsError",
 ]
