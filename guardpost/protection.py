@@ -9,7 +9,12 @@ from typing import Optional, Sequence
 from guardpost.errors import InvalidCredentialsError
 
 
-class FailedAttempts:
+class FailedAuthenticationAttempts:
+    """
+    A record class that stores the count of failed authentication attempts for an
+    arbitrary key (e.g. client IP, or username and client IP), and the time of the last
+    failed attempt.
+    """
 
     __slots__ = ("_key", "_counter", "_last_attempt_time")
 
@@ -20,17 +25,31 @@ class FailedAttempts:
 
     @property
     def key(self) -> str:
+        """
+        Returns the arbitrary key used to store the count of failed authentication
+        attempts (e.g. client IP, or username and client IP).
+        """
         return self._key
 
     @property
     def counter(self) -> int:
+        """
+        Returns the number of failed authentication attempts.
+        """
         return self._counter
 
     @property
     def last_attempt_time(self) -> datetime:
+        """
+        Returns the UTC time of the last failed authentication attempt.
+        """
         return self._last_attempt_time
 
     def increase_counter(self) -> int:
+        """
+        Increases the counter of failed authentication attempt by 1, and sets the
+        last attempt time to UTC now.
+        """
         self._counter += 1
         self._last_attempt_time = datetime.now(UTC)
         return self._counter
@@ -53,10 +72,12 @@ class AuthenticationAttemptsStore(ABC):
     """
 
     @abstractmethod
-    async def get_failed_attempts(self, key: str) -> Optional[FailedAttempts]: ...
+    async def get_failed_attempts(
+        self, key: str
+    ) -> Optional[FailedAuthenticationAttempts]: ...
 
     @abstractmethod
-    async def set_failed_attempts(self, data: FailedAttempts) -> None: ...
+    async def set_failed_attempts(self, data: FailedAuthenticationAttempts) -> None: ...
 
     @abstractmethod
     async def clear_attempts(self, key: str) -> None: ...
@@ -79,7 +100,9 @@ class InMemoryAuthenticationAttemptsStore(AuthenticationAttemptsStore):
         super().__init__()
         self._attempts = {}
 
-    async def get_failed_attempts(self, key: str) -> Optional[FailedAttempts]:
+    async def get_failed_attempts(
+        self, key: str
+    ) -> Optional[FailedAuthenticationAttempts]:
         try:
             return self._attempts[key]
         except KeyError:
@@ -88,7 +111,7 @@ class InMemoryAuthenticationAttemptsStore(AuthenticationAttemptsStore):
     async def clear_attempts(self, key: str) -> None:
         del self._attempts[key]
 
-    async def set_failed_attempts(self, data: FailedAttempts) -> None:
+    async def set_failed_attempts(self, data: FailedAuthenticationAttempts) -> None:
         self._attempts[data.key] = data
 
 
@@ -136,10 +159,10 @@ class RateLimiter:
     async def store_failure(self, error: InvalidCredentialsError):
         failed_attempt = await self._store.get_failed_attempts(error.key)
         if failed_attempt is None:
-            failed_attempt = FailedAttempts(error.key)
+            failed_attempt = FailedAuthenticationAttempts(error.key)
         else:
             if failed_attempt.get_age() >= self._block_time:
-                failed_attempt = FailedAttempts(error.key)
+                failed_attempt = FailedAuthenticationAttempts(error.key)
             else:
                 failed_attempt.increase_counter()
         await self._store.set_failed_attempts(failed_attempt)

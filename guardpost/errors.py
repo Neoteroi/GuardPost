@@ -8,13 +8,13 @@ class UnsupportedFeatureError(AuthException):
 
 class InvalidCredentialsError(AuthException):
     """
-    Exception to be raised when invalid credentials are provided. This exception is
-    handled to implement rate limiting and provide protection against brute-force
-    attacks.
+    Exception to be raised when invalid credentials are provided. The purpose of this
+    class is to be handled to implement rate limiting and provide protection against
+    brute-force attacks.
     """
 
     def __init__(self, client_ip: str, key: str = "") -> None:
-        super().__init__(f"Invalid credentials were received from {client_ip}.")
+        super().__init__(f"Invalid credentials received from {client_ip}.")
 
         if not client_ip:
             raise ValueError("Missing or empty client IP")

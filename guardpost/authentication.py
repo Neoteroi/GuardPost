@@ -273,7 +273,7 @@ class AuthenticationStrategy(BaseStrategy):
         rate_limiter: Optional[RateLimiter] = None,
         key_extractor: Optional[Callable[[Any], str]] = None,
     ) -> None:
-        """Apply rate limiting to all handlers or specific handlers."""
+        """Applies rate limiting to all handlers or specific handlers."""
         limiter = rate_limiter or self._rate_limiter
 
         # Get handlers to apply rate limiting to
