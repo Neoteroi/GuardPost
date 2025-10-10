@@ -175,7 +175,8 @@ class AuthenticationStrategy(BaseStrategy):
                 identity = await self._authenticate_with_handler(handler, context)
             except InvalidCredentialsError as invalid_credentials_error:
                 # A client provided credentials of a given type, and they were invalid.
-                # Store the information, so later we can verify.
+                # Store the information, so later calls can be validated without
+                # attempting authentication.
                 self._logger.info(
                     "Invalid credentials received from client IP %s for scheme: %s",
                     invalid_credentials_error.client_ip,

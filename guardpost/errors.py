@@ -36,9 +36,13 @@ class InvalidCredentialsError(AuthException):
 
 
 class TooManyAuthenticationAttemptsError(Exception):
+    """
+    Exception raised when too many authentication attempts have been made,
+    triggering rate limiting protection against brute-force attacks.
+    """
 
     def __init__(self) -> None:
         super().__init__(
-            "The caller failed too many authentication attempts and authentication has "
-            "been rate limited. Try again later."
+            "Too many authentication attempts. Access temporarily blocked due to rate "
+            "limiting."
         )

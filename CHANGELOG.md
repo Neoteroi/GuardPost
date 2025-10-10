@@ -5,9 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.3] - 2025-10-??
+## [1.0.4] - 2025-10-11 :beers:
 
-- Add built-in support for rate-limiting authentication attempts.
+- Add a `guardpost.protection` namespace with classes offering a strategy for
+  brute-force protection against authentication attempts.
+- Add an `InvalidCredentialsError` exception. `AuthenticationHandler` implementations
+  must raise `InvalidCredentialsError` when credentials are provided but invalid to
+  enable automatic brute-force protection tracking.
+- Integrate `RateLimiter` into `AuthenticationStrategy` with automatic tracking of
+  failed authentication attempts and blocking of excessive requests.
+- Add `RateLimiter` class that blocks authentication attempts after a configurable
+  threshold is exceeded. By default stores failed attempts in-memory and is disabled
+  unless a `key_extractor` function is provided.
+- A deprecation warning is raised when brute-force protection is disabled because of
+  missing `key_extractor` function.
 
 ## [1.0.3] - 2025-10-04 :trident:
 

@@ -11,24 +11,24 @@ from .authorization import (
     AuthorizationContext,
     AuthorizationError,
     AuthorizationStrategy,
+    ForbiddenError,
     Policy,
     PolicyNotFoundError,
     Requirement,
     RequirementConfType,
     RolesRequirement,
     UnauthorizedError,
-    ForbiddenError,
+)
+from .errors import (
+    AuthException,
+    InvalidCredentialsError,
+    TooManyAuthenticationAttemptsError,
 )
 from .protection import (
     AuthenticationAttemptsStore,
     FailedAuthenticationAttempts,
     InMemoryAuthenticationAttemptsStore,
     RateLimiter,
-)
-from .errors import (
-    AuthException,
-    InvalidCredentialsError,
-    TooManyAuthenticationAttemptsError,
 )
 
 __all__ = [

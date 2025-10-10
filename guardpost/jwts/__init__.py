@@ -4,13 +4,13 @@ from typing import Any, Dict, List, Optional, Protocol, Sequence, Union
 import jwt
 from jwt.exceptions import InvalidIssuerError, InvalidTokenError
 
+from guardpost.errors import AuthException
+
 from ..jwks import JWK, JWKS, KeysProvider
 from ..jwks.caching import CachingKeysProvider
 from ..jwks.openid import AuthorityKeysProvider
 from ..jwks.urls import URLKeysProvider
 from ..utils import get_logger
-
-from guardpost.errors import AuthException
 
 
 class OAuthException(AuthException):

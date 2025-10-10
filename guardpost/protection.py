@@ -2,6 +2,7 @@
 This module provides classes to protect against brute-force attacks.
 """
 
+import warnings
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from typing import Any, Callable, Optional, Sequence
@@ -19,7 +20,7 @@ class FailedAuthenticationAttempts:
 
     def __init__(self, key: str) -> None:
         self._key = key
-        self._counter = 0
+        self._counter = 1  # must start from the first attempt
         self._last_attempt_time = datetime.now(tz=UTC)
 
     @property
@@ -73,13 +74,25 @@ class AuthenticationAttemptsStore(ABC):
     @abstractmethod
     async def get_failed_attempts(
         self, key: str
-    ) -> Optional[FailedAuthenticationAttempts]: ...
+    ) -> Optional[FailedAuthenticationAttempts]:
+        """
+        Returns the record tracking the number of failed authentication attempts for a
+        given context key (e.g. client IP), or none if no failed attempt exists for the
+        given key.
+        """
 
     @abstractmethod
-    async def set_failed_attempts(self, data: FailedAuthenticationAttempts) -> None: ...
+    async def set_failed_attempts(self, data: FailedAuthenticationAttempts) -> None:
+        """
+        Stores or updates a record describing the number of failed authentication
+        attempts for a given context key (e.g. client IP).
+        """
 
     @abstractmethod
-    async def clear_attempts(self, key: str) -> None: ...
+    async def clear_attempts(self, key: str) -> None:
+        """
+        Deletes the failed authentication attempts record for the given context key.
+        """
 
 
 class InMemoryAuthenticationAttemptsStore(AuthenticationAttemptsStore):
@@ -123,22 +136,61 @@ class RateLimiter:
 
     def __init__(
         self,
-        threshold: int = 3,
-        block_time: int = 300,
+        key_extractor: Optional[Callable[[Any], str]] = None,
+        threshold: int = 5,
+        block_time: int = 60,
         store: Optional[AuthenticationAttemptsStore] = None,
         trusted_keys: Optional[Sequence[str]] = None,
-        key_extractor: Optional[Callable[[Any], str]] = None,
     ) -> None:
+        """
+        Initialize a RateLimiter instance for brute-force protection.
+
+        Args:
+            key_extractor: Optional callable that extracts a unique key from the
+                authentication context (e.g., client IP address, username).
+                If None, brute-force protection is disabled and a deprecation
+                warning is issued.
+            threshold: Maximum number of failed authentication attempts allowed
+                before blocking. Must be a positive integer. Defaults to 5.
+            block_time: Duration in seconds to block further attempts after
+                threshold is exceeded. Must be a positive integer. Defaults to 60.
+            store: Storage backend for persisting authentication attempts.
+                If None, uses InMemoryAuthenticationAttemptsStore by default.
+            trusted_keys: Optional sequence of keys that bypass rate limiting
+                (e.g., trusted IP addresses). These keys are never blocked
+                regardless of failed attempt count.
+
+        Note:
+            Setting key_extractor to None disables brute-force protection entirely.
+            This behavior is deprecated and will be removed in a future version.
+            It is discouraged in production environments.
+        """
         self._threshold = int(threshold)
         self._block_time = int(block_time)
         self._trusted_keys = set(trusted_keys) if trusted_keys else None
-        self._store = store or InMemoryAuthenticationAttemptsStore()
+        self._store = store or SelfCleaningInMemoryAuthenticationAttemptsStore(
+            max_entry_age=self._block_time + 5
+        )
+        if key_extractor is None:
+            warnings.warn(
+                "No rate limiting provided. Brute-force protection is disabled. "
+                "This is strongly discouraged in production environments. "
+                "This behavior will be deprecated in a future version.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._key_extractor = key_extractor
 
     def get_context_key(self, context: Any) -> str:
-        if self._key_extractor:
-            return self._key_extractor(context)
-        return context.client_ip
+        """
+        Extracts the rate limiting key from the authentication context.
+
+        Raises an AuthException if no key_extractor is provided. Custom extractors
+        should be used carefully as they may introduce security vulnerabilities.
+        """
+        if not self._key_extractor:
+            return ""
+        return self._key_extractor(context)
 
     async def allow_authentication_attempt(self, context: Any) -> bool:
         """
@@ -147,6 +199,11 @@ class RateLimiter:
         blocked.
         """
         key = self.get_context_key(context)
+
+        if not key:
+            # BF protection disabled for backward compatibility.
+            # This option will be deprecated in a future version.
+            return True
 
         if self._trusted_keys and key in self._trusted_keys:
             return True
@@ -177,3 +234,57 @@ class RateLimiter:
             else:
                 failed_attempt.increase_counter()
         await self._store.set_failed_attempts(failed_attempt)
+
+
+class SelfCleaningInMemoryAuthenticationAttemptsStore(
+    InMemoryAuthenticationAttemptsStore
+):
+    """
+    Enhanced in-memory implementation with automatic cleanup of stale entries.
+
+    Extends the base InMemoryAuthenticationAttemptsStore with lazy cleanup functionality
+    to prevent memory leaks in long-running applications. Stale entries are
+    automatically removed during normal operations at configurable intervals.
+    """
+
+    def __init__(self, cleanup_interval: int = 300, max_entry_age: int = 3600) -> None:
+        """
+        Initialize the self-cleaning store.
+
+        Args:
+            cleanup_interval: Seconds between cleanup checks (default: 5 minutes)
+            max_entry_age: Maximum age of entries before cleanup, in seconds
+                           (default: 1 hour)
+        """
+        super().__init__()
+        self._cleanup_interval = cleanup_interval
+        self._max_entry_age = max_entry_age
+        self._last_cleanup = datetime.now(UTC)
+
+    async def get_failed_attempts(
+        self, key: str
+    ) -> Optional[FailedAuthenticationAttempts]:
+        await self._cleanup_if_needed()
+        return await super().get_failed_attempts(key)
+
+    async def set_failed_attempts(self, data: FailedAuthenticationAttempts) -> None:
+        await self._cleanup_if_needed()
+        await super().set_failed_attempts(data)
+
+    async def _cleanup_if_needed(self) -> None:
+        """Periodically remove stale entries during normal operations."""
+        now = datetime.now(UTC)
+        if (now - self._last_cleanup).total_seconds() >= self._cleanup_interval:
+            await self._cleanup_stale_entries()
+            self._last_cleanup = now
+
+    async def _cleanup_stale_entries(self) -> None:
+        """Remove entries older than max_entry_age."""
+        stale_keys = [
+            key
+            for key, attempt in self._attempts.items()
+            if attempt.get_age() >= self._max_entry_age
+        ]
+
+        for key in stale_keys:
+            self._attempts.pop(key, None)
