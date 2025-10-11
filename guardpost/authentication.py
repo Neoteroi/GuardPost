@@ -192,6 +192,9 @@ class AuthenticationStrategy(BaseStrategy):
                 except AttributeError:
                     pass
                 return identity
+            else:
+                if context.identity is None:
+                    context.identity = Identity()
         return None
 
     async def _authenticate_with_handler(self, handler: AuthenticationHandler, context):
