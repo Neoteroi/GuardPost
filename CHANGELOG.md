@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unless a `key_extractor` function is provided.
 - A deprecation warning is raised when brute-force protection is disabled because of
   missing `key_extractor` function.
+- Add Python `3.14` and remove `3.9` from the build matrix.
 
 ## [1.0.3] - 2025-10-04 :trident:
 
