@@ -35,7 +35,7 @@ class InvalidCredentialsError(AuthException):
         self._key = value
 
 
-class TooManyAuthenticationAttemptsError(Exception):
+class RateLimitExceededError(Exception):
     """
     Exception raised when too many authentication attempts have been made,
     triggering rate limiting protection against brute-force attacks.

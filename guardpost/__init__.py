@@ -22,7 +22,7 @@ from .authorization import (
 from .errors import (
     AuthException,
     InvalidCredentialsError,
-    TooManyAuthenticationAttemptsError,
+    RateLimitExceededError,
 )
 from .protection import (
     AuthenticationAttemptsStore,
@@ -55,5 +55,5 @@ __all__ = [
     "InMemoryAuthenticationAttemptsStore",
     "FailedAuthenticationAttempts",
     "InvalidCredentialsError",
-    "TooManyAuthenticationAttemptsError",
+    "RateLimitExceededError",
 ]

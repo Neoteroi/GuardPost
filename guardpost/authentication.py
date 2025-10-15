@@ -8,7 +8,7 @@ from typing import Any, List, Optional, Sequence, Type, Union
 from rodi import ContainerProtocol
 
 from guardpost.abc import BaseStrategy
-from guardpost.errors import TooManyAuthenticationAttemptsError
+from guardpost.errors import RateLimitExceededError
 from guardpost.protection import InvalidCredentialsError, RateLimiter
 
 
@@ -167,7 +167,7 @@ class AuthenticationStrategy(BaseStrategy):
         valid_context = await self._rate_limiter.allow_authentication_attempt(context)
 
         if not valid_context:
-            raise TooManyAuthenticationAttemptsError()
+            raise RateLimitExceededError()
 
         identity = None
         for handler in self._get_handlers_by_schemes(authentication_schemes, context):
