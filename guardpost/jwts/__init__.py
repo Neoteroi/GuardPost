@@ -159,24 +159,17 @@ class AsymmetricJWTValidator(BaseJWTValidator):
     def _validate_jwt_by_key(
         self, access_token: str, jwk: JWK
     ) -> Optional[Dict[str, Any]]:
-        for issuer in self._valid_issuers:
-            try:
-                return jwt.decode(
-                    access_token,
-                    jwk.pem,  # type: ignore
-                    verify=True,
-                    algorithms=self._algorithms,
-                    audience=self._valid_audiences,
-                    issuer=issuer,
-                )
-            except InvalidIssuerError:
-                # pass, because the application might support more than one issuer;
-                # note that token verification might fail for several other reasons
-                # that are not catched (e.g. expired signature)
-                pass
-            except InvalidTokenError as exc:
-                self.logger.debug("Invalid access token: ", exc_info=exc)
-                return None
+        try:
+            return jwt.decode(
+                access_token,
+                jwk.pem,  # type: ignore
+                verify=True,
+                algorithms=self._algorithms,
+                audience=self._valid_audiences,
+                issuer=self._valid_issuers,  # type: ignore
+            )
+        except InvalidTokenError as exc:
+            self.logger.debug("Invalid access token: ", exc_info=exc)
         return None
 
     async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
@@ -259,23 +252,18 @@ class SymmetricJWTValidator(BaseJWTValidator):
         Validates the given JWT using symmetric key and returns its payload.
         This method throws exception if the JWT is not valid.
         """
-        for issuer in self._valid_issuers:
-            try:
-                return jwt.decode(
-                    access_token,
-                    self._secret_key,
-                    verify=True,
-                    algorithms=self._algorithms,
-                    audience=self._valid_audiences,
-                    issuer=issuer,
-                )
-            except InvalidIssuerError:
-                # Try the next issuer
-                pass
-            except InvalidTokenError as exc:
-                self.logger.debug("Invalid access token: ", exc_info=exc)
+        try:
+            return jwt.decode(
+                access_token,
+                self._secret_key,
+                verify=True,
+                algorithms=self._algorithms,
+                audience=self._valid_audiences,
+                issuer=self._valid_issuers,
+            )
+        except InvalidTokenError as exc:
+            self.logger.debug("Invalid access token: ", exc_info=exc)
 
-        # If we've tried all issuers and none worked
         raise InvalidAccessToken()
 
 
