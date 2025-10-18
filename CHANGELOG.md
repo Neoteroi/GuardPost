@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-10-18 :beers:
+
+- Add a `guardpost.protection` namespace with classes offering a strategy for
+  brute-force protection against authentication attempts, and to log all failed
+  authentication attempts consistently.
+- Add an `InvalidCredentialsError` exception. `AuthenticationHandler` implementations
+  can raise `InvalidCredentialsError` when invalid credentials are provided, to
+  enable automatic logging and, if enabled, brute-force protection.
+- Add `RateLimiter` class that can block authentication attempts after a configurable
+  threshold is exceeded. By default stores failed attempts in-memory.
+- Integrate `RateLimiter` into `AuthenticationStrategy` with automatic tracking of
+  failed authentication attempts and support for blocking excessive requests.
+- Add Python `3.14` and remove `3.9` from the build matrix.
+- Drop support for Python `3.9` (it reached EOL in October 2025).
+- Add an optional dependency on `essentials`, to use its `Secret` class to handle
+  secrets for JWT validation with symmetric encryption. This is useful to support
+  rotating secrets by updating env variables.
+- Improve exceptions raised for invalid `JWTs` to include the source exception
+  (`exc.__cause__`).
+
 ## [1.0.3] - 2025-10-04 :trident:
 
 - Add a `roles` property to the `Identity` object.

@@ -8,3 +8,4 @@ cryptography
 black
 flask
 rodi>=2.0.0
+essentials

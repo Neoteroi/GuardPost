@@ -11,6 +11,7 @@ from .authorization import (
     AuthorizationContext,
     AuthorizationError,
     AuthorizationStrategy,
+    ForbiddenError,
     Policy,
     PolicyNotFoundError,
     Requirement,
@@ -18,8 +19,20 @@ from .authorization import (
     RolesRequirement,
     UnauthorizedError,
 )
+from .errors import (
+    AuthException,
+    InvalidCredentialsError,
+    RateLimitExceededError,
+)
+from .protection import (
+    AuthenticationAttemptsStore,
+    FailedAuthenticationAttempts,
+    InMemoryAuthenticationAttemptsStore,
+    RateLimiter,
+)
 
 __all__ = [
+    "AuthException",
     "AuthenticationHandlerConfType",
     "AuthenticationSchemesNotFound",
     "AuthorizationConfigurationError",
@@ -35,5 +48,12 @@ __all__ = [
     "RequirementConfType",
     "RolesRequirement",
     "UnauthorizedError",
+    "ForbiddenError",
     "AuthorizationContext",
+    "RateLimiter",
+    "AuthenticationAttemptsStore",
+    "InMemoryAuthenticationAttemptsStore",
+    "FailedAuthenticationAttempts",
+    "InvalidCredentialsError",
+    "RateLimitExceededError",
 ]

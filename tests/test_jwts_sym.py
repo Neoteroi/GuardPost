@@ -56,7 +56,7 @@ class TestSymmetricJWTValidator:
             valid_audiences=["test-audience"],
             secret_key=secret,
         )
-        assert validator._secret_key == secret
+        assert validator._secret_key == secret.decode("utf-8")
 
     def test_validator_rejects_unsupported_algorithm(self):
         """Test that validator rejects unsupported algorithms"""
@@ -255,8 +255,9 @@ class TestSymmetricJWTValidator:
 
         token = create_expired_token(payload, secret)
 
-        with pytest.raises(InvalidAccessToken):
+        with pytest.raises(InvalidAccessToken) as exc_info:
             await validator.validate_jwt(token)
+        assert "Token expired" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_validate_fails_malformed_token(self):

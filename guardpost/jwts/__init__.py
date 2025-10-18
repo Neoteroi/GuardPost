@@ -2,7 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Protocol, Sequence, Union
 
 import jwt
-from jwt.exceptions import InvalidIssuerError, InvalidTokenError
+from essentials.secrets import Secret
+from jwt.exceptions import InvalidTokenError
+
+from guardpost.errors import AuthException
 
 from ..jwks import JWK, JWKS, KeysProvider
 from ..jwks.caching import CachingKeysProvider
@@ -11,17 +14,26 @@ from ..jwks.urls import URLKeysProvider
 from ..utils import get_logger
 
 
-class OAuthException(Exception):
+class OAuthException(AuthException):
     """Base class for exception risen when there is an issue related to OAuth."""
 
 
-class InvalidAccessToken(Exception):
+class InvalidAccessToken(AuthException):
+    """Raised when an access token is invalid."""
+
     def __init__(self, details=""):
         if details:
             message = "Invalid access token: " + details
         else:
             message = "Invalid access token."
         super().__init__(message)
+
+
+class ExpiredAccessToken(InvalidAccessToken):
+    """Raised when an access token is expired."""
+
+    def __init__(self):
+        super().__init__("Token expired.")
 
 
 def get_kid(token: str) -> Optional[str]:
@@ -154,28 +166,21 @@ class AsymmetricJWTValidator(BaseJWTValidator):
             raise InvalidAccessToken("kid not recognized")
         return key
 
-    def _validate_jwt_by_key(
-        self, access_token: str, jwk: JWK
-    ) -> Optional[Dict[str, Any]]:
-        for issuer in self._valid_issuers:
-            try:
-                return jwt.decode(
-                    access_token,
-                    jwk.pem,  # type: ignore
-                    verify=True,
-                    algorithms=self._algorithms,
-                    audience=self._valid_audiences,
-                    issuer=issuer,
-                )
-            except InvalidIssuerError:
-                # pass, because the application might support more than one issuer;
-                # note that token verification might fail for several other reasons
-                # that are not catched (e.g. expired signature)
-                pass
-            except InvalidTokenError as exc:
-                self.logger.debug("Invalid access token: ", exc_info=exc)
-                return None
-        return None
+    def _validate_jwt_by_key(self, access_token: str, jwk: JWK) -> Dict[str, Any]:
+        try:
+            return jwt.decode(
+                access_token,
+                jwk.pem,  # type: ignore
+                verify=True,
+                algorithms=self._algorithms,
+                audience=self._valid_audiences,
+                issuer=self._valid_issuers,  # type: ignore
+            )
+        except jwt.ExpiredSignatureError as exc:
+            raise ExpiredAccessToken() from exc
+        except InvalidTokenError as exc:
+            self.logger.debug("Invalid access token: ", exc_info=exc)
+            raise InvalidAccessToken() from exc
 
     async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
         """
@@ -197,18 +202,22 @@ class AsymmetricJWTValidator(BaseJWTValidator):
             jwks = await self.get_jwks()
 
             for jwk in jwks.keys:
-                data = self._validate_jwt_by_key(access_token, jwk)
-                if data is not None:
-                    return data
+                try:
+                    return self._validate_jwt_by_key(access_token, jwk)
+                except InvalidAccessToken as exc:
+                    # Continue trying other keys only if the cause is an invalid
+                    # signature
+                    if not isinstance(exc.__cause__, jwt.InvalidSignatureError):
+                        raise exc
+                    continue
+
+            # If we get here, none of the keys worked
+            raise InvalidAccessToken()
         else:
             # Preferred scenario: the identity provider handles key ids,
             # thus we can validate an access token using an exact key
             jwk = await self.get_jwk(kid)
-            data = self._validate_jwt_by_key(access_token, jwk)
-            if data is not None:
-                return data
-
-        raise InvalidAccessToken()
+            return self._validate_jwt_by_key(access_token, jwk)
 
 
 class SymmetricJWTValidator(BaseJWTValidator):
@@ -217,7 +226,7 @@ class SymmetricJWTValidator(BaseJWTValidator):
         *,
         valid_issuers: Sequence[str],
         valid_audiences: Sequence[str],
-        secret_key: Union[str, bytes],
+        secret_key: Union[str, bytes, Secret],
         algorithms: Sequence[str] = ["HS256"],
     ) -> None:
         """
@@ -230,7 +239,7 @@ class SymmetricJWTValidator(BaseJWTValidator):
             Sequence of acceptable issuers (iss).
         valid_audiences : Sequence[str]
             Sequence of acceptable audiences (aud).
-        secret_key : Union[str, bytes]
+        secret_key : Union[str, bytes, Secret]
             The secret key used for symmetric validation.
         algorithms : Sequence[str], optional
             Sequence of acceptable algorithms, by default ["HS256"].
@@ -250,6 +259,12 @@ class SymmetricJWTValidator(BaseJWTValidator):
                     f"validation. Use one of: {', '.join(supported_algorithms)}."
                 )
 
+        if isinstance(secret_key, str):
+            secret_key = Secret(secret_key, direct_value=True)
+        elif isinstance(secret_key, bytes):
+            secret_key = Secret(secret_key.decode("utf-8"), direct_value=True)
+        if not isinstance(secret_key, Secret):
+            raise TypeError("secret_key must be a str, bytes, or Secret instance.")
         self._secret_key = secret_key
 
     async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
@@ -257,24 +272,20 @@ class SymmetricJWTValidator(BaseJWTValidator):
         Validates the given JWT using symmetric key and returns its payload.
         This method throws exception if the JWT is not valid.
         """
-        for issuer in self._valid_issuers:
-            try:
-                return jwt.decode(
-                    access_token,
-                    self._secret_key,
-                    verify=True,
-                    algorithms=self._algorithms,
-                    audience=self._valid_audiences,
-                    issuer=issuer,
-                )
-            except InvalidIssuerError:
-                # Try the next issuer
-                pass
-            except InvalidTokenError as exc:
-                self.logger.debug("Invalid access token: ", exc_info=exc)
-
-        # If we've tried all issuers and none worked
-        raise InvalidAccessToken()
+        try:
+            return jwt.decode(
+                access_token,
+                self._secret_key.get_value(),
+                verify=True,
+                algorithms=self._algorithms,
+                audience=self._valid_audiences,
+                issuer=self._valid_issuers,
+            )
+        except jwt.ExpiredSignatureError as exc:
+            raise ExpiredAccessToken() from exc
+        except InvalidTokenError as exc:
+            self.logger.debug("Invalid access token: ", exc_info=exc)
+            raise InvalidAccessToken() from exc
 
 
 class CompositeJWTValidator(BaseJWTValidator):

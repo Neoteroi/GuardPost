@@ -1,11 +1,14 @@
 import inspect
+import logging
 from abc import ABC, abstractmethod
 from functools import lru_cache
+from logging import Logger
 from typing import Any, List, Optional, Sequence, Type, Union
 
 from rodi import ContainerProtocol
 
 from guardpost.abc import BaseStrategy
+from guardpost.protection import InvalidCredentialsError, RateLimiter
 
 
 class Identity:
@@ -108,9 +111,26 @@ class AuthenticationStrategy(BaseStrategy):
         self,
         *handlers: AuthenticationHandlerConfType,
         container: Optional[ContainerProtocol] = None,
+        rate_limiter: Optional[RateLimiter] = None,
+        logger: Optional[Logger] = None,
     ):
+        """
+        Initializes an AuthenticationStrategy instance.
+
+        Args:
+            *handlers: One or more authentication handler instances or types to be used
+                for authentication.
+            container: Optional dependency injection container for resolving handler
+                instances.
+            rate_limiter: Optional RateLimiter to apply rate limiting to authentication
+                attempts.
+            logger: Optional logger instance for logging authentication events. If not
+                provided, defaults to `logging.getLogger("guardpost")`
+        """
         super().__init__(container)
         self.handlers = list(handlers)
+        self._logger = logger or logging.getLogger("guardpost")
+        self._rate_limiter = rate_limiter
 
     def add(self, handler: AuthenticationHandlerConfType) -> "AuthenticationStrategy":
         self.handlers.append(handler)
@@ -151,16 +171,32 @@ class AuthenticationStrategy(BaseStrategy):
         self, context: Any, authentication_schemes: Optional[Sequence[str]] = None
     ) -> Optional[Identity]:
         """
-        Tries to obtain the user for a context, applying authentication rules.
+        Tries to obtain the user for a context, applying authentication rules and
+        optional rate limiting.
         """
         if not context:
             raise ValueError("Missing context to evaluate authentication")
 
+        if self._rate_limiter:
+            await self._rate_limiter.validate_authentication_attempt(context)
+
+        identity = None
         for handler in self._get_handlers_by_schemes(authentication_schemes, context):
-            if _is_async_handler(type(handler)):
-                identity = await handler.authenticate(context)  # type: ignore
-            else:
-                identity = handler.authenticate(context)
+            try:
+                identity = await self._authenticate_with_handler(handler, context)
+            except InvalidCredentialsError as invalid_credentials_error:
+                # A client provided credentials of a given type, and they were invalid.
+                # Store the information, so later calls can be validated without
+                # attempting authentication.
+                self._logger.info(
+                    "Invalid credentials received from client IP %s for scheme: %s",
+                    invalid_credentials_error.client_ip,
+                    handler.scheme,
+                )
+                if self._rate_limiter:
+                    await self._rate_limiter.store_authentication_failure(
+                        invalid_credentials_error
+                    )
 
             if identity:
                 try:
@@ -168,4 +204,16 @@ class AuthenticationStrategy(BaseStrategy):
                 except AttributeError:
                     pass
                 return identity
+            else:
+                try:
+                    if context.identity is None:
+                        context.identity = Identity()
+                except AttributeError:
+                    pass
         return None
+
+    async def _authenticate_with_handler(self, handler: AuthenticationHandler, context):
+        if _is_async_handler(type(handler)):
+            return await handler.authenticate(context)  # type: ignore
+        else:
+            return handler.authenticate(context)
