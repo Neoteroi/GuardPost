@@ -5,21 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.4] - 2025-10-11 :beers:
+## [1.0.4] - 2025-10-18 :beers:
 
 - Add a `guardpost.protection` namespace with classes offering a strategy for
-  brute-force protection against authentication attempts.
+  brute-force protection against authentication attempts, and to log all failed
+  authentication attempts consistently.
 - Add an `InvalidCredentialsError` exception. `AuthenticationHandler` implementations
-  must raise `InvalidCredentialsError` when credentials are provided but invalid to
-  enable automatic brute-force protection tracking.
+  can raise `InvalidCredentialsError` when invalid credentials are provided, to
+  enable automatic logging and, if desired, brute-force protection.
 - Integrate `RateLimiter` into `AuthenticationStrategy` with automatic tracking of
-  failed authentication attempts and blocking of excessive requests.
-- Add `RateLimiter` class that blocks authentication attempts after a configurable
-  threshold is exceeded. By default stores failed attempts in-memory and is disabled
-  unless a `key_extractor` function is provided.
-- A deprecation warning is raised when brute-force protection is disabled because of
-  missing `key_extractor` function.
+  failed authentication attempts and support for blocking excessive requests.
+- Add `RateLimiter` class that cam block authentication attempts after a configurable
+  threshold is exceeded. By default stores failed attempts in-memory. This feature is
+  disabled unless a `key_getter` function is provided (a function to obtain a context
+  key from the user-defined authentication context, like a client IP).
 - Add Python `3.14` and remove `3.9` from the build matrix.
+- Improve exceptions raised for invalid `JWTs` to include the source exception
+  (`exc.__cause__`).
+- Drop support for Python `3.9` (it reached EOL in October 2025).
+- Add an optional dependency on `essentials`, to use its `Secret` class to handle
+  secrets for JWT validation with symmetric encryption. This is useful to support
+  rotating secrets by updating env variables.
 
 ## [1.0.3] - 2025-10-04 :trident:
 

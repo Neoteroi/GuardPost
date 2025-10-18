@@ -2,7 +2,6 @@
 This module provides classes to protect against brute-force attacks.
 """
 
-import warnings
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from typing import Any, Callable, Optional, Sequence
@@ -136,8 +135,8 @@ class RateLimiter:
 
     def __init__(
         self,
-        key_extractor: Optional[Callable[[Any], str]] = None,
-        threshold: int = 5,
+        key_getter: Optional[Callable[[Any], str]] = None,
+        threshold: int = 20,
         block_time: int = 60,
         store: Optional[AuthenticationAttemptsStore] = None,
         trusted_keys: Optional[Sequence[str]] = None,
@@ -146,12 +145,12 @@ class RateLimiter:
         Initialize a RateLimiter instance for brute-force protection.
 
         Args:
-            key_extractor: Optional callable that extracts a unique key from the
+            key_getter: Optional callable that extracts a unique key from the
                 authentication context (e.g., client IP address, username).
                 If None, brute-force protection is disabled and a deprecation
                 warning is issued.
             threshold: Maximum number of failed authentication attempts allowed
-                before blocking. Must be a positive integer. Defaults to 5.
+                before blocking. Must be a positive integer. Defaults to 20.
             block_time: Duration in seconds to block further attempts after
                 threshold is exceeded. Must be a positive integer. Defaults to 60.
             store: Storage backend for persisting authentication attempts.
@@ -161,7 +160,7 @@ class RateLimiter:
                 regardless of failed attempt count.
 
         Note:
-            Setting key_extractor to None disables brute-force protection entirely.
+            Setting key_getter to None disables brute-force protection entirely.
             This behavior is deprecated and will be removed in a future version.
             It is discouraged in production environments.
         """
@@ -171,26 +170,18 @@ class RateLimiter:
         self._store = store or SelfCleaningInMemoryAuthenticationAttemptsStore(
             max_entry_age=self._block_time + 5
         )
-        if key_extractor is None:
-            warnings.warn(
-                "No rate limiting provided. Brute-force protection is disabled. "
-                "This is strongly discouraged in production environments. "
-                "This behavior will be deprecated in a future version.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        self._key_extractor = key_extractor
+        self._key_getter = key_getter
 
     def get_context_key(self, context: Any) -> str:
         """
         Extracts the rate limiting key from the authentication context.
 
-        Raises an AuthException if no key_extractor is provided. Custom extractors
+        Raises an AuthException if no key_getter is provided. Custom extractors
         should be used carefully as they may introduce security vulnerabilities.
         """
-        if not self._key_extractor:
+        if not self._key_getter:
             return ""
-        return self._key_extractor(context)
+        return self._key_getter(context)
 
     async def allow_authentication_attempt(self, context: Any) -> bool:
         """

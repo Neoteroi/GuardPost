@@ -118,41 +118,32 @@ class TestInMemoryAuthenticationAttemptsStore:
 
 
 class TestRateLimiter:
-    def key_extractor(self, context):
+    def key_getter(self, context):
         return context.get("ip", "")
 
     @pytest.fixture
     def basic_limiter(self):
-        return RateLimiter(key_extractor=self.key_extractor, threshold=3, block_time=60)
+        return RateLimiter(key_getter=self.key_getter, threshold=3, block_time=60)
 
     def test_init_with_defaults(self):
-        limiter = RateLimiter(key_extractor=self.key_extractor)
+        limiter = RateLimiter(key_getter=self.key_getter)
 
-        assert limiter._threshold == 5
+        assert limiter._threshold == 20
         assert limiter._block_time == 60
         assert limiter._trusted_keys is None
         assert isinstance(limiter._store, InMemoryAuthenticationAttemptsStore)
 
     def test_init_with_custom_store(self):
         mock_store = AsyncMock(spec=AuthenticationAttemptsStore)
-        limiter = RateLimiter(key_extractor=self.key_extractor, store=mock_store)
+        limiter = RateLimiter(key_getter=self.key_getter, store=mock_store)
 
         assert limiter._store is mock_store
 
     def test_init_with_trusted_keys(self):
         trusted = ["127.0.0.1", "192.168.1.100"]
-        limiter = RateLimiter(key_extractor=self.key_extractor, trusted_keys=trusted)
+        limiter = RateLimiter(key_getter=self.key_getter, trusted_keys=trusted)
 
         assert limiter._trusted_keys == set(trusted)
-
-    def test_init_without_key_extractor_warns(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            RateLimiter(key_extractor=None)
-
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert "No rate limiting provided" in str(w[0].message)
 
     def test_get_context_key(self, basic_limiter):
         context = {"ip": "192.168.1.1"}
@@ -160,21 +151,19 @@ class TestRateLimiter:
         assert key == "192.168.1.1"
 
     def test_get_context_key_no_extractor(self):
-        limiter = RateLimiter(key_extractor=None)
+        limiter = RateLimiter(key_getter=None)
         key = limiter.get_context_key({"ip": "192.168.1.1"})
         assert key == ""
 
     @pytest.mark.asyncio
     async def test_allow_authentication_attempt_no_key(self):
-        limiter = RateLimiter(key_extractor=None)
+        limiter = RateLimiter(key_getter=None)
         result = await limiter.allow_authentication_attempt({})
         assert result is True
 
     @pytest.mark.asyncio
     async def test_allow_authentication_attempt_trusted_key(self):
-        limiter = RateLimiter(
-            key_extractor=self.key_extractor, trusted_keys=["192.168.1.1"]
-        )
+        limiter = RateLimiter(key_getter=self.key_getter, trusted_keys=["192.168.1.1"])
 
         context = {"ip": "192.168.1.1"}
         result = await limiter.allow_authentication_attempt(context)
@@ -296,7 +285,7 @@ class TestRateLimiter:
     def test_integer_conversion(self):
         # Test that threshold and block_time are converted to integers
         limiter = RateLimiter(
-            key_extractor=self.key_extractor, threshold=5.7, block_time=60.9
+            key_getter=self.key_getter, threshold=5.7, block_time=60.9
         )
 
         assert limiter._threshold == 5
