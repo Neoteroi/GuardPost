@@ -12,7 +12,6 @@ from guardpost.protection import (
     SelfCleaningInMemoryAuthenticationAttemptsStore,
 )
 
-
 UTC = timezone.utc  # for Python 3.10 support…
 
 
