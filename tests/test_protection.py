@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock
 
 import pytest
@@ -11,6 +11,9 @@ from guardpost.protection import (
     RateLimiter,
     SelfCleaningInMemoryAuthenticationAttemptsStore,
 )
+
+
+UTC = timezone.utc  # for Python 3.10 support…
 
 
 class TestFailedAuthenticationAttempts:
