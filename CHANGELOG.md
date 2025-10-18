@@ -14,9 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   can raise `InvalidCredentialsError` when invalid credentials are provided, to
   enable automatic logging and, if enabled, brute-force protection.
 - Add `RateLimiter` class that can block authentication attempts after a configurable
-  threshold is exceeded. By default stores failed attempts in-memory. This feature is
-  disabled unless a `key_getter` function is provided (a function to obtain a context
-  key from the user-defined authentication context, like a client IP).
+  threshold is exceeded. By default stores failed attempts in-memory.
 - Integrate `RateLimiter` into `AuthenticationStrategy` with automatic tracking of
   failed authentication attempts and support for blocking excessive requests.
 - Add Python `3.14` and remove `3.9` from the build matrix.

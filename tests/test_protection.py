@@ -149,17 +149,6 @@ class TestRateLimiter:
         key = basic_limiter.get_context_key(context)
         assert key == "192.168.1.1"
 
-    def test_get_context_key_no_extractor(self):
-        limiter = RateLimiter(key_getter=None)
-        key = limiter.get_context_key({"ip": "192.168.1.1"})
-        assert key == ""
-
-    @pytest.mark.asyncio
-    async def test_allow_authentication_attempt_no_key(self):
-        limiter = RateLimiter(key_getter=None)
-        result = await limiter.allow_authentication_attempt({})
-        assert result is True
-
     @pytest.mark.asyncio
     async def test_allow_authentication_attempt_trusted_key(self):
         limiter = RateLimiter(key_getter=self.key_getter, trusted_keys=["192.168.1.1"])

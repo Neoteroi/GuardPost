@@ -137,7 +137,7 @@ class RateLimiter:
 
     def __init__(
         self,
-        key_getter: Optional[Callable[[Any], str]] = None,
+        key_getter: Callable[[Any], str],
         threshold: int = 20,
         block_time: int = 60,
         store: Optional[AuthenticationAttemptsStore] = None,
@@ -148,10 +148,8 @@ class RateLimiter:
         Initialize a RateLimiter instance for brute-force protection.
 
         Args:
-            key_getter: Optional callable that extracts a unique key from the
+            key_getter: Callable that extracts a unique key from the
                 authentication context (e.g., client IP address, username).
-                If None, brute-force protection is disabled and a deprecation
-                warning is issued.
             threshold: Maximum number of failed authentication attempts allowed
                 before blocking. Must be a positive integer. Defaults to 20.
             block_time: Duration in seconds to block further attempts after
@@ -173,6 +171,8 @@ class RateLimiter:
         self._store = store or SelfCleaningInMemoryAuthenticationAttemptsStore(
             max_entry_age=self._block_time + 5
         )
+        if not key_getter:
+            raise TypeError("Missing key_getter")
         self._key_getter = key_getter
         self._logger = logger or logging.getLogger("guardpost")
 
@@ -182,8 +182,6 @@ class RateLimiter:
         If a key_getter is not configured, rate limiting is disabled and
         returns an empty string.
         """
-        if not self._key_getter:
-            return ""
         return self._key_getter(context)
 
     async def validate_authentication_attempt(self, context: Any) -> None:
