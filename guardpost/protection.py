@@ -4,7 +4,7 @@ This module provides classes to protect against brute-force attacks.
 
 import logging
 from abc import ABC, abstractmethod
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from logging import Logger
 from typing import Any, Callable, Optional, Sequence
 
@@ -22,7 +22,7 @@ class FailedAuthenticationAttempts:
     def __init__(self, key: str) -> None:
         self._key = key
         self._counter = 1  # must start from the first attempt
-        self._last_attempt_time = datetime.now(tz=UTC)
+        self._last_attempt_time = datetime.now(tz=timezone.utc)
 
     @property
     def key(self) -> str:
@@ -52,14 +52,14 @@ class FailedAuthenticationAttempts:
         last attempt time to UTC now.
         """
         self._counter += 1
-        self._last_attempt_time = datetime.now(UTC)
+        self._last_attempt_time = datetime.now(timezone.utc)
         return self._counter
 
     def get_age(self) -> float:
         """
         Returns the number of seconds passed since the last authentication attempt.
         """
-        return (datetime.now(UTC) - self._last_attempt_time).total_seconds()
+        return (datetime.now(timezone.utc) - self._last_attempt_time).total_seconds()
 
 
 class AuthenticationAttemptsStore(ABC):
@@ -279,7 +279,7 @@ class SelfCleaningInMemoryAuthenticationAttemptsStore(
         super().__init__()
         self._cleanup_interval = cleanup_interval
         self._max_entry_age = max_entry_age
-        self._last_cleanup = datetime.now(UTC)
+        self._last_cleanup = datetime.now(timezone.utc)
 
     async def get_failed_attempts(
         self, key: str
@@ -293,7 +293,7 @@ class SelfCleaningInMemoryAuthenticationAttemptsStore(
 
     async def _cleanup_if_needed(self) -> None:
         """Periodically remove stale entries during normal operations."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         if (now - self._last_cleanup).total_seconds() >= self._cleanup_interval:
             await self._cleanup_stale_entries()
             self._last_cleanup = now
