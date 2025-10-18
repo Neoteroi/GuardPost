@@ -8,7 +8,6 @@ from typing import Any, List, Optional, Sequence, Type, Union
 from rodi import ContainerProtocol
 
 from guardpost.abc import BaseStrategy
-from guardpost.errors import RateLimitExceededError
 from guardpost.protection import InvalidCredentialsError, RateLimiter
 
 
@@ -115,10 +114,23 @@ class AuthenticationStrategy(BaseStrategy):
         rate_limiter: Optional[RateLimiter] = None,
         logger: Optional[Logger] = None,
     ):
+        """
+        Initializes an AuthenticationStrategy instance.
+
+        Args:
+            *handlers: One or more authentication handler instances or types to be used
+                for authentication.
+            container: Optional dependency injection container for resolving handler
+                instances.
+            rate_limiter: Optional RateLimiter to apply rate limiting to authentication
+                attempts.
+            logger: Optional logger instance for logging authentication events. If not
+                provided, defaults to `logging.getLogger("guardpost")`
+        """
         super().__init__(container)
         self.handlers = list(handlers)
-        self._rate_limiter = rate_limiter or RateLimiter()
         self._logger = logger or logging.getLogger("guardpost")
+        self._rate_limiter = rate_limiter
 
     def add(self, handler: AuthenticationHandlerConfType) -> "AuthenticationStrategy":
         self.handlers.append(handler)
@@ -159,15 +171,14 @@ class AuthenticationStrategy(BaseStrategy):
         self, context: Any, authentication_schemes: Optional[Sequence[str]] = None
     ) -> Optional[Identity]:
         """
-        Tries to obtain the user for a context, applying authentication rules.
+        Tries to obtain the user for a context, applying authentication rules and
+        optional rate limiting.
         """
         if not context:
             raise ValueError("Missing context to evaluate authentication")
 
-        valid_context = await self._rate_limiter.allow_authentication_attempt(context)
-
-        if not valid_context:
-            raise RateLimitExceededError()
+        if self._rate_limiter:
+            await self._rate_limiter.validate_authentication_attempt(context)
 
         identity = None
         for handler in self._get_handlers_by_schemes(authentication_schemes, context):
@@ -182,9 +193,10 @@ class AuthenticationStrategy(BaseStrategy):
                     invalid_credentials_error.client_ip,
                     handler.scheme,
                 )
-                await self._rate_limiter.store_authentication_failure(
-                    invalid_credentials_error
-                )
+                if self._rate_limiter:
+                    await self._rate_limiter.store_authentication_failure(
+                        invalid_credentials_error
+                    )
 
             if identity:
                 try:

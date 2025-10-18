@@ -2,11 +2,13 @@
 This module provides classes to protect against brute-force attacks.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
+from logging import Logger
 from typing import Any, Callable, Optional, Sequence
 
-from guardpost.errors import InvalidCredentialsError
+from guardpost.errors import InvalidCredentialsError, RateLimitExceededError
 
 
 class FailedAuthenticationAttempts:
@@ -140,6 +142,7 @@ class RateLimiter:
         block_time: int = 60,
         store: Optional[AuthenticationAttemptsStore] = None,
         trusted_keys: Optional[Sequence[str]] = None,
+        logger: Optional[Logger] = None,
     ) -> None:
         """
         Initialize a RateLimiter instance for brute-force protection.
@@ -171,25 +174,50 @@ class RateLimiter:
             max_entry_age=self._block_time + 5
         )
         self._key_getter = key_getter
+        self._logger = logger or logging.getLogger("guardpost")
 
     def get_context_key(self, context: Any) -> str:
         """
-        Extracts the rate limiting key from the authentication context.
-
-        Raises an AuthException if no key_getter is provided. Custom extractors
-        should be used carefully as they may introduce security vulnerabilities.
+        Obtains the rate limiting key from the authentication context.
+        If a key_getter is not configured, rate limiting is disabled and
+        returns an empty string.
         """
         if not self._key_getter:
             return ""
         return self._key_getter(context)
 
-    async def allow_authentication_attempt(self, context: Any) -> bool:
+    async def validate_authentication_attempt(self, context: Any) -> None:
+        """
+        Checks if an authentication attempt should be allowed for the given context.
+        It always returns true if a `key_getter` function is not configured (function to
+        obtain a key from the user-defined authentication context).
+
+        Args:
+            context: The authentication context (e.g., request object).
+
+        Raises:
+            **RateLimitExceededError**: If the rate limit has been exceeded and the
+            attempt is blocked.
+        """
+        key = self.get_context_key(context)
+
+        valid_context = await self.allow_authentication_attempt(key)
+
+        if not valid_context:
+            self._logger.warning(
+                "Blocking authentication attempt for '%s' because of rate limiting.",
+                key,
+            )
+            raise RateLimitExceededError()
+
+    async def allow_authentication_attempt(self, key: Any) -> bool:
         """
         Determines if an authentication attempt should be allowed based on rate limiting
         rules. Returns True if the attempt should proceed, False if it should be
-        blocked.
+        blocked. Key can be a str or a context.
         """
-        key = self.get_context_key(context)
+        if not isinstance(key, str):
+            key = self.get_context_key(key)
 
         if not key:
             # BF protection disabled for backward compatibility.
@@ -212,7 +240,9 @@ class RateLimiter:
 
         return True
 
-    async def store_authentication_failure(self, error: InvalidCredentialsError):
+    async def store_authentication_failure(
+        self, error: InvalidCredentialsError
+    ) -> FailedAuthenticationAttempts:
         """
         Tracks information about a failed authentication attempt.
         """
@@ -225,6 +255,7 @@ class RateLimiter:
             else:
                 failed_attempt.increase_counter()
         await self._store.set_failed_attempts(failed_attempt)
+        return failed_attempt
 
 
 class SelfCleaningInMemoryAuthenticationAttemptsStore(

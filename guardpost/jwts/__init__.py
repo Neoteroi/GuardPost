@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Protocol, Sequence, Union
 
 import jwt
-from jwt.exceptions import InvalidIssuerError, InvalidTokenError
-
 from essentials.secrets import Secret
+from jwt.exceptions import InvalidTokenError
+
 from guardpost.errors import AuthException
 
 from ..jwks import JWK, JWKS, KeysProvider
