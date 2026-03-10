@@ -1,5 +1,5 @@
-import time
 from typing import Any, Dict, Iterable
+from unittest.mock import patch
 
 import jwt
 import pytest
@@ -74,15 +74,19 @@ async def test_jwt_validator_can_validate_valid_access_tokens(default_keys_provi
 
 @pytest.mark.asyncio
 async def test_jwt_validator_cache_expiration(default_keys_provider):
-    validator = JWTValidator(
-        valid_audiences=["a"],
-        valid_issuers=["b"],
-        keys_provider=default_keys_provider,
-        cache_time=0.1,
-    )
-    await _valid_tokens_scenario(validator)
-    time.sleep(0.2)
-    await _valid_tokens_scenario(validator)
+    with patch("guardpost.jwks.caching.time") as mock_time:
+        mock_time.time.return_value = 0
+        validator = JWTValidator(
+            valid_audiences=["a"],
+            valid_issuers=["b"],
+            keys_provider=default_keys_provider,
+            cache_time=10,
+        )
+        await _valid_tokens_scenario(validator)
+
+        # Simulate cache_time elapsed — keys must be re-fetched
+        mock_time.time.return_value = 11
+        await _valid_tokens_scenario(validator)
 
 
 @pytest.mark.asyncio
@@ -90,25 +94,29 @@ async def test_jwt_validator_fetches_tokens_again_for_unknown_kid():
     keys = get_test_jwks()
     # configure a key provider that returns the given JWKS in sequence
     keys_provider = MockedKeysProvider([JWKS(keys.keys[0:2]), JWKS(keys.keys[2:])])
-    validator = JWTValidator(
-        valid_audiences=["a"],
-        valid_issuers=["b"],
-        keys_provider=keys_provider,
-        cache_time=10,
-        refresh_time=0.2,
-    )
-    await _valid_token_scenario("0", validator)
-    await _valid_token_scenario("1", validator)
 
-    # this must fail because tokens were just fetched, and kid "2" is not present
-    with pytest.raises(InvalidAccessToken):
+    with patch("guardpost.jwks.caching.time") as mock_time:
+        mock_time.time.return_value = 0
+        validator = JWTValidator(
+            valid_audiences=["a"],
+            valid_issuers=["b"],
+            keys_provider=keys_provider,
+            cache_time=10,
+            refresh_time=30,
+        )
+        await _valid_token_scenario("0", validator)
+        await _valid_token_scenario("1", validator)
+
+        # this must fail because refresh_time has not elapsed yet (t=1 < 30s)
+        mock_time.time.return_value = 1
+        with pytest.raises(InvalidAccessToken):
+            await _valid_token_scenario("2", validator)
+
+        # simulate refresh_time elapsed — provider should now fetch the new keys
+        mock_time.time.return_value = 31
         await _valid_token_scenario("2", validator)
-
-    time.sleep(0.3)
-    # now the JWTValidator should fetch automatically the new keys
-    await _valid_token_scenario("2", validator)
-    await _valid_token_scenario("3", validator)
-    await _valid_token_scenario("4", validator)
+        await _valid_token_scenario("3", validator)
+        await _valid_token_scenario("4", validator)
 
 
 @pytest.mark.asyncio

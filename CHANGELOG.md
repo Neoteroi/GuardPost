@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2026-03-10
 
-- Add support for ES* algorithms for keys.
+- Add support for ES* algorithms (`ES256`, `ES384`, `ES512`) for EC keys in
+  `JWK`, `JWKS`, and `AsymmetricJWTValidator`.
+- Fix flaky test `test_jwt_validator_fetches_tokens_again_for_unknown_kid`
+  that failed on slower hardware (e.g. Raspberry Pi / aarch64) due to a
+  timing-sensitive `refresh_time` threshold; replaced real-time sleeps with
+  mocked time for deterministic behaviour. Reported by
+  [@wrobell](https://github.com/wrobell) in
+  [#18](https://github.com/Neoteroi/GuardPost/issues/18).
 
 ## [1.0.4] - 2025-10-18 :musical_keyboard:
 
