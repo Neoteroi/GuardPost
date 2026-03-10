@@ -42,3 +42,15 @@ authorization.
 
 This example illustrates a basic use of an authorization strategy, with support for
 dependency injection for authorization requirements.
+
+
+## example-08.py
+
+This example illustrates how to validate JWTs signed with RSA keys (RS256),
+using an in-memory JWKS built from a generated RSA key pair.
+
+
+## example-09.py
+
+This example illustrates how to validate JWTs signed with EC keys (ES256, ES384,
+ES512), using an in-memory JWKS built from generated EC key pairs.
