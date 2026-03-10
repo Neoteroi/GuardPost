@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Protocol, Sequence, Union
+from typing import Any, Protocol, Sequence
 
 import jwt
 from essentials.secrets import Secret
@@ -36,7 +36,7 @@ class ExpiredAccessToken(InvalidAccessToken):
         super().__init__("Token expired.")
 
 
-def get_kid(token: str) -> Optional[str]:
+def get_kid(token: str) -> str | None:
     """
     Extracts a kid (key id) from a JWT.
     """
@@ -49,7 +49,7 @@ def get_kid(token: str) -> Optional[str]:
 class JWTValidatorProtocol(Protocol):
     """Protocol defining the interface for JWT validators"""
 
-    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+    async def validate_jwt(self, access_token: str) -> dict[str, Any]:
         """
         Validates an access token and returns its claims.
         """
@@ -72,7 +72,7 @@ class BaseJWTValidator(ABC):
         self.logger = get_logger()
 
     @abstractmethod
-    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+    async def validate_jwt(self, access_token: str) -> dict[str, Any]:
         """
         Validates an access token and returns its claims.
         """
@@ -90,11 +90,11 @@ class AsymmetricJWTValidator(BaseJWTValidator):
         *,
         valid_issuers: Sequence[str],
         valid_audiences: Sequence[str],
-        authority: Optional[str] = None,
+        authority: str | None = None,
         algorithms: Sequence[str] = ["RS256"],
         require_kid: bool = True,
-        keys_provider: Optional[KeysProvider] = None,
-        keys_url: Optional[str] = None,
+        keys_provider: KeysProvider | None = None,
+        keys_url: str | None = None,
         cache_time: float = 10800,
         refresh_time: float = 120,
     ) -> None:
@@ -109,7 +109,7 @@ class AsymmetricJWTValidator(BaseJWTValidator):
             Sequence of acceptable issuers (iss).
         valid_audiences : Sequence[str]
             Sequence of acceptable audiences (aud).
-        authority : Optional[str], optional
+        authority : str | None, optional
             If provided, keys are obtained from a standard well-known endpoint.
             This parameter is ignored if `keys_provider` is given.
         algorithms : Sequence[str], optional
@@ -119,10 +119,10 @@ class AsymmetricJWTValidator(BaseJWTValidator):
             this parameter lets control whether access tokens missing `kid` in their
             headers should be handled or rejected. By default True, thus only JWTs
             having `kid` header are accepted.
-        keys_provider : Optional[KeysProvider], optional
+        keys_provider : KeysProvider | None, optional
             If provided, the exact `KeysProvider` to be used when fetching keys.
             By default None
-        keys_url : Optional[str], optional
+        keys_url : str | None, optional
             If provided, keys are obtained from the given URL through HTTP GET.
             This parameter is ignored if `keys_provider` is given.
         cache_time : float
@@ -169,7 +169,7 @@ class AsymmetricJWTValidator(BaseJWTValidator):
             raise InvalidAccessToken("kid not recognized")
         return key
 
-    def _validate_jwt_by_key(self, access_token: str, jwk: JWK) -> Dict[str, Any]:
+    def _validate_jwt_by_key(self, access_token: str, jwk: JWK) -> dict[str, Any]:
         try:
             return jwt.decode(
                 access_token,
@@ -185,7 +185,7 @@ class AsymmetricJWTValidator(BaseJWTValidator):
             self.logger.debug("Invalid access token: ", exc_info=exc)
             raise InvalidAccessToken() from exc
 
-    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+    async def validate_jwt(self, access_token: str) -> dict[str, Any]:
         """
         Validates the given JWT and returns its payload. This method throws exception
         if the JWT is not valid (i.e. its signature cannot be verified, for example
@@ -229,7 +229,7 @@ class SymmetricJWTValidator(BaseJWTValidator):
         *,
         valid_issuers: Sequence[str],
         valid_audiences: Sequence[str],
-        secret_key: Union[str, bytes, Secret],
+        secret_key: str | bytes | Secret,
         algorithms: Sequence[str] = ["HS256"],
     ) -> None:
         """
@@ -242,7 +242,7 @@ class SymmetricJWTValidator(BaseJWTValidator):
             Sequence of acceptable issuers (iss).
         valid_audiences : Sequence[str]
             Sequence of acceptable audiences (aud).
-        secret_key : Union[str, bytes, Secret]
+        secret_key : str | bytes | Secret
             The secret key used for symmetric validation.
         algorithms : Sequence[str], optional
             Sequence of acceptable algorithms, by default ["HS256"].
@@ -270,7 +270,7 @@ class SymmetricJWTValidator(BaseJWTValidator):
             raise TypeError("secret_key must be a str, bytes, or Secret instance.")
         self._secret_key = secret_key
 
-    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+    async def validate_jwt(self, access_token: str) -> dict[str, Any]:
         """
         Validates the given JWT using symmetric key and returns its payload.
         This method throws exception if the JWT is not valid.
@@ -292,20 +292,20 @@ class SymmetricJWTValidator(BaseJWTValidator):
 
 
 class CompositeJWTValidator(BaseJWTValidator):
-    def __init__(self, validators: List[JWTValidatorProtocol]) -> None:
+    def __init__(self, validators: list[JWTValidatorProtocol]) -> None:
         """
         Creates a composite validator that tries multiple validation strategies.
         Useful when you need to support both symmetric and asymmetric validation.
 
         Parameters
         ----------
-        validators : List[JWTValidatorProtocol]
+        validators : list[JWTValidatorProtocol]
             List of validators to try in sequence
         """
         self._validators = validators
         self.logger = get_logger()
 
-    async def validate_jwt(self, access_token: str) -> Dict[str, Any]:
+    async def validate_jwt(self, access_token: str) -> dict[str, Any]:
         """
         Attempts to validate the JWT using each validator in sequence.
         Returns the first successful validation result or raises InvalidAccessToken

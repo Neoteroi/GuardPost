@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-03-??
+
+- Modernize type annotations: replace `Union[X, Y]` with `X | Y`, `Optional[X]` with `X | None`, and built-in generics (`dict`, `list`, `set`) instead of their `typing` counterparts. Requires Python 3.10+.
+
 ## [1.1.0] - 2026-03-10
 
 - Add support for ES* algorithms (`ES256`, `ES384`, `ES512`) for EC keys in

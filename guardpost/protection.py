@@ -6,7 +6,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from logging import Logger
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Sequence
 
 from guardpost.errors import InvalidCredentialsError, RateLimitExceededError
 
@@ -75,7 +75,7 @@ class AuthenticationAttemptsStore(ABC):
     @abstractmethod
     async def get_failed_attempts(
         self, key: str
-    ) -> Optional[FailedAuthenticationAttempts]:
+    ) -> FailedAuthenticationAttempts | None:
         """
         Returns the record tracking the number of failed authentication attempts for a
         given context key (e.g. client IP), or none if no failed attempt exists for the
@@ -115,7 +115,7 @@ class InMemoryAuthenticationAttemptsStore(AuthenticationAttemptsStore):
 
     async def get_failed_attempts(
         self, key: str
-    ) -> Optional[FailedAuthenticationAttempts]:
+    ) -> FailedAuthenticationAttempts | None:
         try:
             return self._attempts[key]
         except KeyError:
@@ -140,9 +140,9 @@ class RateLimiter:
         key_getter: Callable[[Any], str],
         threshold: int = 20,
         block_time: int = 60,
-        store: Optional[AuthenticationAttemptsStore] = None,
-        trusted_keys: Optional[Sequence[str]] = None,
-        logger: Optional[Logger] = None,
+        store: AuthenticationAttemptsStore | None = None,
+        trusted_keys: Sequence[str] | None = None,
+        logger: Logger | None = None,
     ) -> None:
         """
         Initialize a RateLimiter instance for brute-force protection.
@@ -283,7 +283,7 @@ class SelfCleaningInMemoryAuthenticationAttemptsStore(
 
     async def get_failed_attempts(
         self, key: str
-    ) -> Optional[FailedAuthenticationAttempts]:
+    ) -> FailedAuthenticationAttempts | None:
         await self._cleanup_if_needed()
         return await super().get_failed_attempts(key)
 

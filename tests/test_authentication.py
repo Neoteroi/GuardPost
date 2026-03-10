@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -122,7 +122,7 @@ class MockHandler(AuthenticationHandler):
     def __init__(self, identity):
         self.identity = identity
 
-    async def authenticate(self, context: Any) -> Optional[Identity]:
+    async def authenticate(self, context: Any) -> Identity | None:
         context.user = self.identity
         return context.user
 
@@ -175,11 +175,11 @@ async def test_authentication_strategy_by_scheme_throws_for_missing_scheme():
 
 def test_default_authentication_scheme_name_matches_class_name():
     class Basic(AuthenticationHandler):
-        async def authenticate(self, context: Any) -> Optional[Identity]:
+        async def authenticate(self, context: Any) -> Identity | None:
             pass
 
     class Foo(AuthenticationHandler):
-        async def authenticate(self, context: Any) -> Optional[Identity]:
+        async def authenticate(self, context: Any) -> Identity | None:
             pass
 
     assert Basic().scheme == "Basic"
@@ -193,7 +193,7 @@ class Foo:
 class InjectedAuthenticationHandler(AuthenticationHandler):
     service: Foo
 
-    def authenticate(self, context) -> Optional[Identity]:
+    def authenticate(self, context) -> Identity | None:
         return None
 
 
@@ -220,7 +220,7 @@ async def test_authenticate_set_identity_context_attribute_error_handling():
     container = Container()
 
     class TestHandler(AuthenticationHandler):
-        def authenticate(self, context: Any) -> Optional[Identity]:
+        def authenticate(self, context: Any) -> Identity | None:
             return Identity({"sub": test_id})
 
     container.register(TestHandler)

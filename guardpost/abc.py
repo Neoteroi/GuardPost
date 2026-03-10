@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Iterable, List, Optional, Type, TypeVar, Union
+from typing import Any, Iterable, Type, TypeVar
 
 from rodi import ContainerProtocol
 
@@ -19,7 +19,7 @@ class DINotConfiguredError(StrategyConfigurationError):
 
 
 class BaseStrategy(ABC):
-    def __init__(self, container: Optional[ContainerProtocol] = None) -> None:
+    def __init__(self, container: ContainerProtocol | None = None) -> None:
         super().__init__()
         self._container = container
 
@@ -39,7 +39,7 @@ class BaseStrategy(ABC):
         except AttributeError:
             return None
 
-    def _get_instances(self, items: List[Union[T, Type[T]]], scope: Any) -> Iterable[T]:
+    def _get_instances(self, items: list[T | Type[T]], scope: Any) -> Iterable[T]:
         """
         Yields instances of types, optionally activated through dependency injection.
 

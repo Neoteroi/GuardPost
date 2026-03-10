@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from pytest import raises
@@ -69,11 +69,11 @@ def test_authentication_strategy_iadd_method():
     strategy = AuthenticationStrategy()
 
     class ExampleOne(AuthenticationHandler):
-        def authenticate(self, context: Any) -> Optional[Identity]:
+        def authenticate(self, context: Any) -> Identity | None:
             pass
 
     class ExampleTwo(AuthenticationHandler):
-        def authenticate(self, context: Any) -> Optional[Identity]:
+        def authenticate(self, context: Any) -> Identity | None:
             pass
 
     one = ExampleOne()
@@ -93,11 +93,11 @@ def test_authentication_strategy_add_method():
     strategy = AuthenticationStrategy()
 
     class ExampleOne(AuthenticationHandler):
-        def authenticate(self, context: Any) -> Optional[Identity]:
+        def authenticate(self, context: Any) -> Identity | None:
             pass
 
     class ExampleTwo(AuthenticationHandler):
-        def authenticate(self, context: Any) -> Optional[Identity]:
+        def authenticate(self, context: Any) -> Identity | None:
             pass
 
     one = ExampleOne()
