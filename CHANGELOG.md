@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add support for ES* algorithms (`ES256`, `ES384`, `ES512`) for EC keys in
   `JWK`, `JWKS`, and `AsymmetricJWTValidator`.
+- Modernize type annotations: replace `Union[X, Y]` with `X | Y`, `Optional[X]`
+  with `X | None`, and built-in generics (`dict`, `list`, `set`) instead of
+  their `typing` counterparts. Requires Python 3.10+.
 - Fix flaky test `test_jwt_validator_fetches_tokens_again_for_unknown_kid`
   that failed on slower hardware (e.g. Raspberry Pi / aarch64) due to a
   timing-sensitive `refresh_time` threshold; replaced real-time sleeps with
