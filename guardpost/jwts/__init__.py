@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Protocol, Sequence, Union
 
 import jwt
 from essentials.secrets import Secret
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import InvalidKeyError, InvalidTokenError
 
 from guardpost.errors import AuthException
 
@@ -81,6 +81,8 @@ class BaseJWTValidator(ABC):
 class AsymmetricJWTValidator(BaseJWTValidator):
     """
     A JWTValidator that can validate JWTs signed using asymmetric encryption.
+    Supports RSA algorithms (RS256, RS384, RS512) and EC algorithms
+    (ES256, ES384, ES512).
     """
 
     def __init__(
@@ -98,7 +100,8 @@ class AsymmetricJWTValidator(BaseJWTValidator):
     ) -> None:
         """
         Creates a new instance of AsymmetricJWTValidator. This class supports validating
-        access tokens signed using asymmetric keys and handling JWKs of RSA type.
+        access tokens signed using asymmetric keys, including RSA keys (RS256, RS384,
+        RS512) and EC keys (ES256, ES384, ES512).
 
         Parameters
         ----------
@@ -178,7 +181,7 @@ class AsymmetricJWTValidator(BaseJWTValidator):
             )
         except jwt.ExpiredSignatureError as exc:
             raise ExpiredAccessToken() from exc
-        except InvalidTokenError as exc:
+        except (InvalidTokenError, InvalidKeyError) as exc:
             self.logger.debug("Invalid access token: ", exc_info=exc)
             raise InvalidAccessToken() from exc
 

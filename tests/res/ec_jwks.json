@@ -1,0 +1,28 @@
+{
+    "keys": [
+        {
+            "kty": "EC",
+            "kid": "ec256",
+            "alg": "ES256",
+            "crv": "P-256",
+            "x": "4IARuKy_KY81_Pp3lpkDHjs3A1dspMfHE2AGzWjQ2BI",
+            "y": "BA8XKhvbW4lcTPoU1yKzg72vQuijRwWr6tW2kO0JK0o"
+        },
+        {
+            "kty": "EC",
+            "kid": "ec384",
+            "alg": "ES384",
+            "crv": "P-384",
+            "x": "PFgXz6kVviXaBERqr_e1Hb8i52lf0vA2vXtYOLAaQFmHJqcW_pnRlJdUPIu-Tpkr",
+            "y": "QaGekVqDUBeyxUe9Md2s5hICTocfJk89B3jYuLM6CuDm-X4KtoGZnadpPapS9CAf"
+        },
+        {
+            "kty": "EC",
+            "kid": "ec521",
+            "alg": "ES512",
+            "crv": "P-521",
+            "x": "AY8Nbqvauc6ZQFPSC95UvJVe0fT8VrXs_vlrBt8pGyUB_SvDSHX9qkOIWraEoaonUqT3eW-wKjQjEAjWoK4YpYSx",
+            "y": "AKyOPPfa4duN0tveyR4E9gCf41HcetcS_KhJvYKsQbZI7wYU7VbrsZK1WVrNR8MbVRmP9jvQL1_chfc9L54_F1Q8"
+        }
+    ]
+}

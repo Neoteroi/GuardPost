@@ -1,7 +1,16 @@
+import json
+import os
+
 import pytest
 
 from guardpost.errors import UnsupportedFeatureError
 from guardpost.jwks import JWK, JWKS, KeyType
+
+
+def _get_ec_jwks_dict():
+    path = os.path.join(os.path.dirname(__file__), "res", "ec_jwks.json")
+    with open(path, encoding="utf8") as f:
+        return json.load(f)
 
 
 def test_keytype_from_str():
@@ -122,3 +131,62 @@ def test_jwks_update_override():
     key_0 = next((key for key in jwks_1.keys if key.kid == "0"), None)
     assert key_0 is not None
     assert key_0.n == jwks_2.keys[0].n
+
+
+def test_jwk_ec_p256_from_dict():
+    ec_jwks = _get_ec_jwks_dict()
+    key_data = next(k for k in ec_jwks["keys"] if k["kid"] == "ec256")
+    jwk = JWK.from_dict(key_data)
+    assert jwk.kty is KeyType.EC
+    assert jwk.crv == "P-256"
+    assert jwk.x == key_data["x"]
+    assert jwk.y == key_data["y"]
+    assert jwk.kid == "ec256"
+    assert jwk.pem.startswith(b"-----BEGIN PUBLIC KEY-----")
+    assert jwk.n is None
+    assert jwk.e is None
+
+
+def test_jwk_ec_p384_from_dict():
+    ec_jwks = _get_ec_jwks_dict()
+    key_data = next(k for k in ec_jwks["keys"] if k["kid"] == "ec384")
+    jwk = JWK.from_dict(key_data)
+    assert jwk.kty is KeyType.EC
+    assert jwk.crv == "P-384"
+    assert jwk.pem.startswith(b"-----BEGIN PUBLIC KEY-----")
+
+
+def test_jwk_ec_p521_from_dict():
+    ec_jwks = _get_ec_jwks_dict()
+    key_data = next(k for k in ec_jwks["keys"] if k["kid"] == "ec521")
+    jwk = JWK.from_dict(key_data)
+    assert jwk.kty is KeyType.EC
+    assert jwk.crv == "P-521"
+    assert jwk.pem.startswith(b"-----BEGIN PUBLIC KEY-----")
+
+
+def test_jwk_ec_raises_for_unsupported_curve():
+    with pytest.raises(ValueError, match="Unsupported EC curve"):
+        JWK.from_dict({"kty": "EC", "crv": "P-192", "x": "abc", "y": "def"})
+
+
+def test_jwk_ec_raises_for_missing_fields():
+    with pytest.raises(ValueError, match="Missing crv"):
+        JWK.from_dict({"kty": "EC", "x": "abc", "y": "def"})
+
+    with pytest.raises(ValueError, match="Missing x"):
+        JWK.from_dict({"kty": "EC", "crv": "P-256", "y": "def"})
+
+    with pytest.raises(ValueError, match="Missing y"):
+        JWK.from_dict({"kty": "EC", "crv": "P-256", "x": "abc"})
+
+
+def test_jwks_from_dict_with_ec_keys():
+    ec_jwks = _get_ec_jwks_dict()
+    jwks = JWKS.from_dict(ec_jwks)
+    assert len(jwks.keys) == 3
+    kids = {k.kid for k in jwks.keys}
+    assert kids == {"ec256", "ec384", "ec521"}
+    for key in jwks.keys:
+        assert key.kty is KeyType.EC
+        assert key.pem is not None
