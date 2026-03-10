@@ -87,6 +87,7 @@ GuardPost is used in BlackSheep and has been tested with:
 - Okta
 
 ## If you have doubts about authentication vs authorization...
+
 `Authentication` answers the question: _Who is the user who is initiating the
 action?_, or more in general: _Who is the user, or what is the service, that is
 initiating the action?_.

@@ -1,6 +1,7 @@
 """
 Tests for JWT validation using EC keys (ES256, ES384, ES512).
 """
+
 import json
 import os
 from typing import Any, Dict
@@ -9,7 +10,7 @@ import jwt
 import pytest
 
 from guardpost.jwks import JWKS, InMemoryKeysProvider
-from guardpost.jwts import AsymmetricJWTValidator, ExpiredAccessToken, InvalidAccessToken
+from guardpost.jwts import AsymmetricJWTValidator, InvalidAccessToken
 
 
 def _get_ec_jwks_dict():

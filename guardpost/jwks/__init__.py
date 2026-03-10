@@ -7,11 +7,11 @@ from typing import Dict, List, Optional, Type
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ec import (
-    EllipticCurve,
-    EllipticCurvePublicNumbers,
     SECP256R1,
     SECP384R1,
     SECP521R1,
+    EllipticCurve,
+    EllipticCurvePublicNumbers,
 )
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 
