@@ -54,3 +54,9 @@ using an in-memory JWKS built from a generated RSA key pair.
 
 This example illustrates how to validate JWTs signed with EC keys (ES256, ES384,
 ES512), using an in-memory JWKS built from generated EC key pairs.
+
+
+## example-10.py
+
+This example illustrates how to validate JWTs signed with a symmetric secret key
+(HMAC), using the SymmetricJWTValidator with HS256, HS384, and HS512 algorithms.
