@@ -77,12 +77,12 @@ asyncio.run(main())
 ```
 
 An example value for `authority`, to validate access tokens issued by
-Azure Active Directory could be: `https://sts.windows.net/YOUR_TENANT_ID/`.
+Entra ID could be: `https://sts.windows.net/YOUR_TENANT_ID/`.
 
 GuardPost is used in BlackSheep and has been tested with:
 
 - Auth0
-- Azure Active Directory
+- Entra ID
 - Azure Active Directory B2C
 - Okta
 
@@ -111,4 +111,4 @@ To see how `guardpost` is used in `blacksheep` web framework, read:
 
 # Documentation
 
-Under construction. 🚧
+The documentation is available at **[https://www.neoteroi.dev/guardpost/](https://www.neoteroi.dev/guardpost/)**.
