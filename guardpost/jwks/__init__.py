@@ -2,10 +2,17 @@ import base64
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional, Type
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ec import (
+    EllipticCurve,
+    EllipticCurvePublicNumbers,
+    SECP256R1,
+    SECP384R1,
+    SECP521R1,
+)
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 
 from guardpost.errors import UnsupportedFeatureError
@@ -15,6 +22,13 @@ def _raise_if_missing(value: dict, *keys: str) -> None:
     for key in keys:
         if key not in value or not bool(value[key]):
             raise ValueError(f"Missing {key}")
+
+
+_EC_CURVES: Dict[str, Type[EllipticCurve]] = {
+    "P-256": SECP256R1,
+    "P-384": SECP384R1,
+    "P-521": SECP521R1,
+}
 
 
 class KeyType(Enum):
@@ -40,29 +54,51 @@ class JWK:
     A JSON Web Key (JWK) is a JavaScript Object Notation (JSON) data
     structure that represents a cryptographic key.
 
+    Supports RSA keys (kty="RSA") and EC keys (kty="EC") with curves
+    P-256, P-384, and P-521.
+
     For more information: https://datatracker.ietf.org/doc/html/rfc7517
     """
 
     kty: KeyType
-    n: str
-    e: str
     pem: bytes
     kid: Optional[str] = None
+    # RSA parameters
+    n: Optional[str] = None
+    e: Optional[str] = None
+    # EC parameters
+    crv: Optional[str] = None
+    x: Optional[str] = None
+    y: Optional[str] = None
 
     @classmethod
     def from_dict(cls, value) -> "JWK":
         key_type = KeyType.from_str(value.get("kty"))
 
-        if key_type != KeyType.RSA:
-            raise UnsupportedFeatureError("This library supports only RSA public keys.")
+        if key_type == KeyType.RSA:
+            _raise_if_missing(value, "n", "e")
+            return cls(
+                kty=key_type,
+                n=value["n"],
+                e=value["e"],
+                kid=value.get("kid"),
+                pem=rsa_pem_from_n_and_e(value["n"], value["e"]),
+            )
 
-        _raise_if_missing(value, "n", "e")
-        return cls(
-            kty=key_type,
-            n=value["n"],
-            e=value["e"],
-            kid=value.get("kid"),
-            pem=rsa_pem_from_n_and_e(value["n"], value["e"]),
+        if key_type == KeyType.EC:
+            _raise_if_missing(value, "crv", "x", "y")
+            return cls(
+                kty=key_type,
+                crv=value["crv"],
+                x=value["x"],
+                y=value["y"],
+                kid=value.get("kid"),
+                pem=ec_pem_from_x_y_crv(value["x"], value["y"], value["crv"]),
+            )
+
+        raise UnsupportedFeatureError(
+            f"Unsupported key type: {key_type.value}. "
+            "This library supports RSA and EC public keys."
         )
 
 
@@ -125,6 +161,25 @@ def _decode_value(val):
 def rsa_pem_from_n_and_e(n: str, e: str) -> bytes:
     return (
         RSAPublicNumbers(n=_decode_value(n), e=_decode_value(e))
+        .public_key(default_backend())
+        .public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+
+
+def ec_pem_from_x_y_crv(x: str, y: str, crv: str) -> bytes:
+    curve_cls = _EC_CURVES.get(crv)
+    if curve_cls is None:
+        raise ValueError(
+            f"Unsupported EC curve: {crv!r}. "
+            f"Supported curves: {', '.join(_EC_CURVES)}."
+        )
+    x_int = _decode_value(x)
+    y_int = _decode_value(y)
+    return (
+        EllipticCurvePublicNumbers(x=x_int, y=y_int, curve=curve_cls())
         .public_key(default_backend())
         .public_bytes(
             encoding=serialization.Encoding.PEM,
