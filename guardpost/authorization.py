@@ -1,7 +1,7 @@
 import inspect
 from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Type, Union
+from typing import Any, Callable, Iterable, Sequence, Type
 
 from rodi import ContainerProtocol
 
@@ -46,7 +46,7 @@ class RolesRequirement(Requirement):
 
     __slots__ = ("_roles",)
 
-    def __init__(self, roles: Optional[Sequence[str]] = None):
+    def __init__(self, roles: Sequence[str] | None = None):
         self._roles = list(roles) if roles else None
 
     def handle(self, context: "AuthorizationContext"):
@@ -61,7 +61,7 @@ class RolesRequirement(Requirement):
                 context.succeed(self)
 
 
-RequirementConfType = Union[Requirement, Type[Requirement]]
+RequirementConfType = Requirement | Type[Requirement]
 
 
 @lru_cache(maxsize=None)
@@ -79,11 +79,11 @@ class UnauthorizedError(AuthorizationError):
 
     def __init__(
         self,
-        forced_failure: Optional[str],
+        forced_failure: str | None,
         failed_requirements: Sequence[Requirement],
-        scheme: Optional[str] = None,
-        error: Optional[str] = None,
-        error_description: Optional[str] = None,
+        scheme: str | None = None,
+        error: str | None = None,
+        error_description: str | None = None,
     ):
         """
         Creates a new instance of UnauthorizedError, with details.
@@ -132,11 +132,11 @@ class AuthorizationContext:
     def __init__(self, identity: Identity, requirements: Sequence[Requirement]):
         self.identity = identity
         self.requirements = requirements
-        self._succeeded: Set[Requirement] = set()
-        self._failed_forced: Optional[str] = None
+        self._succeeded: set[Requirement] = set()
+        self._failed_forced: str | None = None
 
     @property
-    def pending_requirements(self) -> List[Requirement]:
+    def pending_requirements(self) -> list[Requirement]:
         return [item for item in self.requirements if item not in self._succeeded]
 
     @property
@@ -146,7 +146,7 @@ class AuthorizationContext:
         return all(requirement in self._succeeded for requirement in self.requirements)
 
     @property
-    def forced_failure(self) -> Optional[str]:
+    def forced_failure(self) -> str | None:
         return None if self._failed_forced is None else str(self._failed_forced)
 
     def fail(self, reason: str):
@@ -208,16 +208,16 @@ class AuthorizationStrategy(BaseStrategy):
     def __init__(
         self,
         *policies: Policy,
-        container: Optional[ContainerProtocol] = None,
-        default_policy: Optional[Policy] = None,
-        identity_getter: Optional[Callable[..., Identity]] = None,
+        container: ContainerProtocol | None = None,
+        default_policy: Policy | None = None,
+        identity_getter: Callable[..., Identity] | None = None,
     ):
         super().__init__(container)
         self.policies = list(policies)
         self.default_policy = default_policy
         self.identity_getter = identity_getter
 
-    def get_policy(self, name: str) -> Optional[Policy]:
+    def get_policy(self, name: str) -> Policy | None:
         for policy in self.policies:
             if policy.name == name:
                 return policy
@@ -237,10 +237,10 @@ class AuthorizationStrategy(BaseStrategy):
 
     async def authorize(
         self,
-        policy_name: Optional[str],
+        policy_name: str | None,
         identity: Identity,
         scope: Any = None,
-        roles: Optional[Sequence[str]] = None,
+        roles: Sequence[str] | None = None,
     ):
         if policy_name:
             policy = self.get_policy(policy_name)
@@ -268,7 +268,7 @@ class AuthorizationStrategy(BaseStrategy):
                 raise UnauthorizedError("The resource requires authentication", [])
 
     def _get_requirements(
-        self, policy: Policy, scope: Any, roles: Optional[Sequence[str]] = None
+        self, policy: Policy, scope: Any, roles: Sequence[str] | None = None
     ) -> Iterable[Requirement]:
         if roles:
             yield RolesRequirement(roles=roles)
@@ -279,7 +279,7 @@ class AuthorizationStrategy(BaseStrategy):
         policy: Policy,
         identity: Identity,
         scope: Any,
-        roles: Optional[Sequence[str]] = None,
+        roles: Sequence[str] | None = None,
     ):
         with AuthorizationContext(
             identity, list(self._get_requirements(policy, scope, roles))
@@ -287,7 +287,7 @@ class AuthorizationStrategy(BaseStrategy):
             await self._handle_context(identity, context)
 
     async def _handle_with_roles(
-        self, identity: Identity, roles: Optional[Sequence[str]] = None
+        self, identity: Identity, roles: Sequence[str] | None = None
     ):
         # This method is to be used only when the user specified roles without a policy
         with AuthorizationContext(identity, [RolesRequirement(roles=roles)]) as context:
@@ -310,13 +310,13 @@ class AuthorizationStrategy(BaseStrategy):
             )
 
     async def _handle_with_identity_getter(
-        self, policy_name: Optional[str], *args, **kwargs
+        self, policy_name: str | None, *args, **kwargs
     ):
         if self.identity_getter is None:
             raise TypeError("Missing identity getter function.")
         await self.authorize(policy_name, self.identity_getter(*args, **kwargs))
 
-    def __call__(self, policy: Optional[str] = None):
+    def __call__(self, policy: str | None = None):
         """
         Decorates a function to apply authorization logic on each call.
         """

@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from typing import Mapping as MappingType
-from typing import Sequence, Union
+from typing import Sequence
 
 from .authorization import AuthorizationContext, Policy, Requirement
 
@@ -35,7 +35,7 @@ class AuthenticatedRequirement(Requirement):
             context.succeed(self)
 
 
-RequiredClaimsType = Union[MappingType[str, str], Sequence[str], str]
+RequiredClaimsType = MappingType[str, str] | Sequence[str] | str
 
 
 class ClaimsRequirement(Requirement):

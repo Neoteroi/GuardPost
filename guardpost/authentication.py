@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from logging import Logger
-from typing import Any, List, Optional, Sequence, Type, Union
+from typing import Any, Sequence, Type
 
 from rodi import ContainerProtocol
 
@@ -19,20 +19,20 @@ class Identity:
 
     def __init__(
         self,
-        claims: Optional[dict] = None,
-        authentication_mode: Optional[str] = None,
+        claims: dict | None = None,
+        authentication_mode: str | None = None,
     ):
         self.claims = claims or {}
         self.authentication_mode = authentication_mode
-        self.access_token: Optional[str] = None
-        self.refresh_token: Optional[str] = None
+        self.access_token: str | None = None
+        self.refresh_token: str | None = None
 
     @property
-    def sub(self) -> Optional[str]:
+    def sub(self) -> str | None:
         return self.get("sub")
 
     @property
-    def roles(self) -> Optional[str]:
+    def roles(self) -> str | None:
         return self.get("roles")
 
     def is_authenticated(self) -> bool:
@@ -58,15 +58,15 @@ class Identity:
 
 class User(Identity):
     @property
-    def id(self) -> Optional[str]:
+    def id(self) -> str | None:
         return self.get("id") or self.sub
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         return self.get("name")
 
     @property
-    def email(self) -> Optional[str]:
+    def email(self) -> str | None:
         return self.get("email")
 
 
@@ -79,7 +79,7 @@ class AuthenticationHandler(ABC):
         return self.__class__.__name__
 
     @abstractmethod
-    def authenticate(self, context: Any) -> Optional[Identity]:
+    def authenticate(self, context: Any) -> Identity | None:
         """Obtains an identity from a context."""
 
 
@@ -90,9 +90,7 @@ def _is_async_handler(handler_type: Type[AuthenticationHandler]) -> bool:
     return inspect.iscoroutinefunction(handler_type.authenticate)
 
 
-AuthenticationHandlerConfType = Union[
-    AuthenticationHandler, Type[AuthenticationHandler]
-]
+AuthenticationHandlerConfType = AuthenticationHandler | Type[AuthenticationHandler]
 
 
 class AuthenticationSchemesNotFound(ValueError):
@@ -110,9 +108,9 @@ class AuthenticationStrategy(BaseStrategy):
     def __init__(
         self,
         *handlers: AuthenticationHandlerConfType,
-        container: Optional[ContainerProtocol] = None,
-        rate_limiter: Optional[RateLimiter] = None,
-        logger: Optional[Logger] = None,
+        container: ContainerProtocol | None = None,
+        rate_limiter: RateLimiter | None = None,
+        logger: Logger | None = None,
     ):
         """
         Initializes an AuthenticationStrategy instance.
@@ -144,9 +142,9 @@ class AuthenticationStrategy(BaseStrategy):
 
     def _get_handlers_by_schemes(
         self,
-        authentication_schemes: Optional[Sequence[str]] = None,
+        authentication_schemes: Sequence[str] | None = None,
         context: Any = None,
-    ) -> List[AuthenticationHandler]:
+    ) -> list[AuthenticationHandler]:
         if not authentication_schemes:
             return list(self._get_instances(self.handlers, context))
 
@@ -168,8 +166,8 @@ class AuthenticationStrategy(BaseStrategy):
         return handlers
 
     async def authenticate(
-        self, context: Any, authentication_schemes: Optional[Sequence[str]] = None
-    ) -> Optional[Identity]:
+        self, context: Any, authentication_schemes: Sequence[str] | None = None
+    ) -> Identity | None:
         """
         Tries to obtain the user for a context, applying authentication rules and
         optional rate limiting.

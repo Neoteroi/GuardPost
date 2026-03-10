@@ -1,5 +1,5 @@
 import time
-from typing import Optional
+
 
 from . import JWK, JWKS, KeysProvider
 
@@ -24,7 +24,7 @@ class CachingKeysProvider(KeysProvider):
         if not keys_provider:
             raise TypeError("Missing KeysProvider")
 
-        self._keys: Optional[JWKS] = None
+        self._keys: JWKS | None = None
         self._cache_time = cache_time
         self._refresh_time = refresh_time
         self._last_fetch_time: float = 0
@@ -57,7 +57,7 @@ class CachingKeysProvider(KeysProvider):
                 return self._keys
         return await self._fetch_keys()
 
-    async def get_key(self, kid: str) -> Optional[JWK]:
+    async def get_key(self, kid: str) -> JWK | None:
         """
         Tries to get a JWK by kid. If the JWK is not found and the last time the keys
         were fetched is older than `refresh_time` (default 120 seconds), it fetches

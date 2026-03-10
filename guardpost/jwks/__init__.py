@@ -2,7 +2,7 @@ import base64
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Type
+from typing import Type
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -24,7 +24,7 @@ def _raise_if_missing(value: dict, *keys: str) -> None:
             raise ValueError(f"Missing {key}")
 
 
-_EC_CURVES: Dict[str, Type[EllipticCurve]] = {
+_EC_CURVES: dict[str, Type[EllipticCurve]] = {
     "P-256": SECP256R1,
     "P-384": SECP384R1,
     "P-521": SECP521R1,
@@ -62,14 +62,14 @@ class JWK:
 
     kty: KeyType
     pem: bytes
-    kid: Optional[str] = None
+    kid: str | None = None
     # RSA parameters
-    n: Optional[str] = None
-    e: Optional[str] = None
+    n: str | None = None
+    e: str | None = None
     # EC parameters
-    crv: Optional[str] = None
-    x: Optional[str] = None
-    y: Optional[str] = None
+    crv: str | None = None
+    x: str | None = None
+    y: str | None = None
 
     @classmethod
     def from_dict(cls, value) -> "JWK":
@@ -104,7 +104,7 @@ class JWK:
 
 @dataclass
 class JWKS:
-    keys: List[JWK]
+    keys: list[JWK]
 
     def update(self, new_set: "JWKS"):
         self.keys = list({key.kid: key for key in self.keys + new_set.keys}.values())
